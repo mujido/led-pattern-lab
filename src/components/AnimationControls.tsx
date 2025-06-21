@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Play, Pause, SkipBack, SkipForward } from 'lucide-react';
+import { Play, Pause } from 'lucide-react';
 
 interface AnimationControlsProps {
   totalFrames: number;
@@ -37,6 +37,13 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
 }) => {
   const Icon = isPlaying ? Pause : Play;
 
+  const handleWheel = (e: React.WheelEvent, value: number, onChange: (val: number) => void, min: number, max: number) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -1 : 1;
+    const newValue = Math.min(max, Math.max(min, value + delta));
+    onChange(newValue);
+  };
+
   return (
     <div className="space-y-4">
       {/* Frame Count */}
@@ -49,6 +56,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
           max="100"
           value={totalFrames}
           onChange={(e) => onFrameCountChange(parseInt(e.target.value) || 1)}
+          onWheel={(e) => handleWheel(e, totalFrames, onFrameCountChange, 1, 100)}
           className="bg-gray-700 border-gray-600 text-white mt-1"
         />
       </div>
@@ -56,36 +64,15 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
       {/* Frame Navigation */}
       <div className="space-y-2">
         <Label className="text-sm text-gray-300">Current Frame</Label>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onCurrentFrameChange(Math.max(0, currentFrame - 1))}
-            disabled={currentFrame === 0}
-            className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
-          >
-            <SkipBack className="w-4 h-4" />
-          </Button>
-          
-          <Input
-            type="number"
-            min="0"
-            max={totalFrames - 1}
-            value={currentFrame}
-            onChange={(e) => onCurrentFrameChange(Math.min(totalFrames - 1, Math.max(0, parseInt(e.target.value) || 0)))}
-            className="bg-gray-700 border-gray-600 text-white text-center flex-1"
-          />
-          
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => onCurrentFrameChange(Math.min(totalFrames - 1, currentFrame + 1))}
-            disabled={currentFrame === totalFrames - 1}
-            className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
-          >
-            <SkipForward className="w-4 h-4" />
-          </Button>
-        </div>
+        <Input
+          type="number"
+          min="0"
+          max={totalFrames - 1}
+          value={currentFrame}
+          onChange={(e) => onCurrentFrameChange(Math.min(totalFrames - 1, Math.max(0, parseInt(e.target.value) || 0)))}
+          onWheel={(e) => handleWheel(e, currentFrame, onCurrentFrameChange, 0, totalFrames - 1)}
+          className="bg-gray-700 border-gray-600 text-white text-center"
+        />
       </div>
 
       {/* Playback Controls */}
@@ -126,6 +113,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
               max={endFrame}
               value={startFrame}
               onChange={(e) => onStartFrameChange(Math.min(endFrame, Math.max(0, parseInt(e.target.value) || 0)))}
+              onWheel={(e) => handleWheel(e, startFrame, onStartFrameChange, 0, endFrame)}
               className="bg-gray-700 border-gray-600 text-white text-sm"
             />
           </div>
@@ -138,6 +126,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
               max={totalFrames - 1}
               value={endFrame}
               onChange={(e) => onEndFrameChange(Math.min(totalFrames - 1, Math.max(startFrame, parseInt(e.target.value) || startFrame)))}
+              onWheel={(e) => handleWheel(e, endFrame, onEndFrameChange, startFrame, totalFrames - 1)}
               className="bg-gray-700 border-gray-600 text-white text-sm"
             />
           </div>
