@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LEDBox } from './LEDBox';
 
@@ -12,11 +11,10 @@ interface LEDGridProps {
 export const LEDGrid: React.FC<LEDGridProps> = ({ rows, columns, colors, onLedClick }) => {
   return (
     <div className="overflow-auto">
-      <div 
-        className="grid gap-1 mx-auto"
-        style={{ 
-          gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-          maxWidth: `${columns * 24 + (columns - 1) * 4}px`
+      <div
+        className="grid gap-1"
+        style={{
+          gridTemplateColumns: `repeat(${columns}, 1.5rem)`, // Corresponds to w-6
         }}
       >
         {Array(rows).fill(null).map((_, row) =>

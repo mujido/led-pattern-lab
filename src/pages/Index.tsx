@@ -42,6 +42,18 @@ const Index = () => {
     return () => clearInterval(interval);
   }, [isPlaying, playbackSpeed, startFrame, endFrame]);
 
+  // Debug effect to monitor state changes
+  useEffect(() => {
+    console.log('State updated:', {
+      rows,
+      columns,
+      totalFrames,
+      currentFrame,
+      ledFramesLength: ledFrames.length,
+      currentFrameData: ledFrames[currentFrame]
+    });
+  }, [rows, columns, totalFrames, currentFrame, ledFrames]);
+
   const addToRecentColors = useCallback((color: string) => {
     setRecentColors(prev => {
       const filtered = prev.filter(c => c !== color);
@@ -122,19 +134,23 @@ const Index = () => {
     }
   }, [rows, columns, currentFrame, endFrame, startFrame]);
 
-  const handleLoadGif = useCallback((frames: string[][][]) => {
-    console.log('Loading GIF frames:', frames);
-    // Implementation would go here
+  const handleLoadFrames = useCallback((frames: string[][][]) => {
+    setLedFrames(frames);
+    setTotalFrames(frames.length);
+
+    // Reset frame position
+    setCurrentFrame(0);
+    setStartFrame(0);
+    setEndFrame(frames.length > 0 ? frames.length - 1 : 0);
   }, []);
 
-  const handleSaveGif = useCallback(() => {
-    console.log('Saving GIF with frames:', ledFrames);
-    // Implementation would go here
+  const handleSaveFrames = useCallback(() => {
+    return ledFrames;
   }, [ledFrames]);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4">
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto">
         <header className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
             LED Pattern Designer
@@ -142,7 +158,7 @@ const Index = () => {
           <p className="text-gray-400">Design beautiful animated patterns for your LED matrix</p>
         </header>
 
-        <div className="grid lg:grid-cols-4 gap-6">
+        <div className="grid lg:grid-cols-5 gap-6">
           {/* Controls Panel */}
           <div className="lg:col-span-1 space-y-6">
             <Card className="p-4 bg-gray-800 border-gray-700">
@@ -174,10 +190,12 @@ const Index = () => {
             </Card>
 
             <Card className="p-4 bg-gray-800 border-gray-700">
-              <h2 className="text-xl font-semibold mb-4">GIF Tools</h2>
+              <h2 className="text-xl font-semibold mb-4">Image Tools</h2>
               <GifControls
-                onLoadGif={handleLoadGif}
-                onSaveGif={handleSaveGif}
+                onLoadFrames={handleLoadFrames}
+                onSaveFrames={handleSaveFrames}
+                currentRows={rows}
+                currentColumns={columns}
               />
             </Card>
 
@@ -199,7 +217,7 @@ const Index = () => {
           </div>
 
           {/* LED Grid */}
-          <div className="lg:col-span-3">
+          <div className="lg:col-span-4">
             <Card className="p-6 bg-gray-800 border-gray-700">
               <div className="mb-4 text-center">
                 <span className="text-lg font-semibold">Frame {currentFrame + 1} of {totalFrames}</span>

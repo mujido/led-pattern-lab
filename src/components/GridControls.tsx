@@ -1,10 +1,9 @@
-
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Grid2x2, Palette } from 'lucide-react';
+import { Palette } from 'lucide-react';
 
 interface GridControlsProps {
   rows: number;
@@ -13,12 +12,25 @@ interface GridControlsProps {
   onClearGrid: () => void;
 }
 
+const MIN_DIM = 1;
+const MAX_DIM = 64;
+
 export const GridControls: React.FC<GridControlsProps> = ({
   rows,
   columns,
   onGridSizeChange,
   onClearGrid
 }) => {
+
+  const handleWheel = (e: React.WheelEvent<HTMLInputElement>, currentValue: number, setter: (value: number) => void) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? -1 : 1;
+    const newValue = Math.min(MAX_DIM, Math.max(MIN_DIM, currentValue + delta));
+    setter(newValue);
+  };
+
+  const clamp = (value: number) => Math.min(MAX_DIM, Math.max(MIN_DIM, value));
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
@@ -27,10 +39,11 @@ export const GridControls: React.FC<GridControlsProps> = ({
           <Input
             id="rows"
             type="number"
-            min="1"
-            max="32"
+            min={MIN_DIM}
+            max={MAX_DIM}
             value={rows}
-            onChange={(e) => onGridSizeChange(parseInt(e.target.value) || 1, columns)}
+            onChange={(e) => onGridSizeChange(clamp(parseInt(e.target.value) || MIN_DIM), columns)}
+            onWheel={(e) => handleWheel(e, rows, (newRows) => onGridSizeChange(newRows, columns))}
             className="bg-gray-700 border-gray-600 text-white mt-1"
           />
         </div>
@@ -39,15 +52,16 @@ export const GridControls: React.FC<GridControlsProps> = ({
           <Input
             id="columns"
             type="number"
-            min="1"
-            max="64"
+            min={MIN_DIM}
+            max={MAX_DIM}
             value={columns}
-            onChange={(e) => onGridSizeChange(rows, parseInt(e.target.value) || 1)}
+            onChange={(e) => onGridSizeChange(rows, clamp(parseInt(e.target.value) || MIN_DIM))}
+            onWheel={(e) => handleWheel(e, columns, (newCols) => onGridSizeChange(rows, newCols))}
             className="bg-gray-700 border-gray-600 text-white mt-1"
           />
         </div>
       </div>
-      
+
       <div className="space-y-2">
         <AlertDialog>
           <AlertDialogTrigger asChild>
@@ -72,16 +86,8 @@ export const GridControls: React.FC<GridControlsProps> = ({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-        
+
         <div className="flex gap-2">
-          <Button
-            onClick={() => onGridSizeChange(8, 8)}
-            variant="outline"
-            size="sm"
-            className="flex-1 bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
-          >
-            8×8
-          </Button>
           <Button
             onClick={() => onGridSizeChange(16, 16)}
             variant="outline"
@@ -97,6 +103,14 @@ export const GridControls: React.FC<GridControlsProps> = ({
             className="flex-1 bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
           >
             8×32
+          </Button>
+          <Button
+            onClick={() => onGridSizeChange(64, 64)}
+            variant="outline"
+            size="sm"
+            className="flex-1 bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+          >
+            64×64
           </Button>
         </div>
       </div>
