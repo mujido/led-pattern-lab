@@ -1,0 +1,29 @@
+menu "Project Configuration"
+
+    config WIFI_SSID
+        string "WiFi SSID"
+        default "your-ssid"
+        help
+            The SSID (name) of the Wi-Fi network to connect to.
+
+    config WIFI_PASSWORD
+        string "WiFi Password"
+        default "your-password"
+        help
+            The password of the Wi-Fi network.
+
+    config NUM_LEDS
+        int "Number of LEDs"
+        default 64
+        range 1 1024
+        help
+            The total number of LEDs in the strip.
+
+    config LED_GPIO_PIN
+        int "LED GPIO Pin"
+        default 5
+        range 0 33
+        help
+            The GPIO pin connected to the data line of the LED strip.
+
+endmenu

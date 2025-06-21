@@ -89,20 +89,20 @@ export const GridControls: React.FC<GridControlsProps> = ({
 
         <div className="flex gap-2">
           <Button
-            onClick={() => onGridSizeChange(16, 16)}
-            variant="outline"
-            size="sm"
-            className="flex-1 bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
-          >
-            16×16
-          </Button>
-          <Button
             onClick={() => onGridSizeChange(8, 32)}
             variant="outline"
             size="sm"
             className="flex-1 bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
           >
-            8×32
+            8x32
+          </Button>
+          <Button
+            onClick={() => onGridSizeChange(32, 32)}
+            variant="outline"
+            size="sm"
+            className="flex-1 bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+          >
+            32×32
           </Button>
           <Button
             onClick={() => onGridSizeChange(64, 64)}
