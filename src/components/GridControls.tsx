@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Grid2x2, Palette } from 'lucide-react';
 
 interface GridControlsProps {
@@ -48,14 +49,29 @@ export const GridControls: React.FC<GridControlsProps> = ({
       </div>
       
       <div className="space-y-2">
-        <Button
-          onClick={onClearGrid}
-          variant="outline"
-          className="w-full bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
-        >
-          <Palette className="w-4 h-4 mr-2" />
-          Clear Grid
-        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+            >
+              <Palette className="w-4 h-4 mr-2" />
+              Clear Grid
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="bg-gray-800 border-gray-700">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-white">Clear Grid</AlertDialogTitle>
+              <AlertDialogDescription className="text-gray-300">
+                Are you sure you want to clear the current frame? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600">Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={onClearGrid} className="bg-red-600 hover:bg-red-700">Clear</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
         
         <div className="flex gap-2">
           <Button

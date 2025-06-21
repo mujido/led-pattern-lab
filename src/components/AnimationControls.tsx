@@ -39,6 +39,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
 
   const handleWheel = (e: React.WheelEvent, value: number, onChange: (val: number) => void, min: number, max: number) => {
     e.preventDefault();
+    e.stopPropagation();
     const delta = e.deltaY > 0 ? -1 : 1;
     const newValue = Math.min(max, Math.max(min, value + delta));
     onChange(newValue);

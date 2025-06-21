@@ -5,6 +5,7 @@ import { RecentColors } from '@/components/RecentColors';
 import { LEDGrid } from '@/components/LEDGrid';
 import { GridControls } from '@/components/GridControls';
 import { AnimationControls } from '@/components/AnimationControls';
+import { GifControls } from '@/components/GifControls';
 import { Card } from '@/components/ui/card';
 
 const Index = () => {
@@ -122,6 +123,16 @@ const Index = () => {
     }
   }, [rows, columns, currentFrame, endFrame, startFrame]);
 
+  const handleLoadGif = useCallback((frames: string[][][]) => {
+    console.log('Loading GIF frames:', frames);
+    // Implementation would go here
+  }, []);
+
+  const handleSaveGif = useCallback(() => {
+    console.log('Saving GIF with frames:', ledFrames);
+    // Implementation would go here
+  }, [ledFrames]);
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4">
       <div className="max-w-7xl mx-auto">
@@ -160,6 +171,14 @@ const Index = () => {
                 onPlaybackSpeedChange={setPlaybackSpeed}
                 onStartFrameChange={setStartFrame}
                 onEndFrameChange={setEndFrame}
+              />
+            </Card>
+
+            <Card className="p-4 bg-gray-800 border-gray-700">
+              <h2 className="text-xl font-semibold mb-4">GIF Tools</h2>
+              <GifControls
+                onLoadGif={handleLoadGif}
+                onSaveGif={handleSaveGif}
               />
             </Card>
 
