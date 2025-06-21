@@ -75,13 +75,16 @@ function scaleCanvas(sourceCanvas: HTMLCanvasElement, targetWidth: number, targe
   targetCanvas.height = targetHeight;
   const ctx = targetCanvas.getContext('2d')!;
 
+  // Disable image smoothing to preserve pixel art style
+  ctx.imageSmoothingEnabled = false;
+
   ctx.drawImage(sourceCanvas, 0, 0, targetWidth, targetHeight);
 
   return targetCanvas;
 }
 
 // Load GIF file and extract frames
-export async function loadGif(file: File, targetWidth: number, targetHeight: number): Promise<ImageFormat> {
+export async function loadGif(file: File, targetWidth: number, targetHeight: number, cumulative: boolean): Promise<ImageFormat> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -91,7 +94,7 @@ export async function loadGif(file: File, targetWidth: number, targetHeight: num
           url: URL.createObjectURL(file),
           frames: 'all',
           outputType: 'canvas',
-          cumulative: true,
+          cumulative,
         }).then(frames => {
           const frameData: FrameData[] = frames.map((frame: any) => {
             const sourceCanvas = frame.getImage();

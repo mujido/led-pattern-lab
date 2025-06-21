@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Download, Upload, FileImage, AlertCircle } from 'lucide-react';
 import { loadGif, loadPng, saveAsGif, saveAsPng, detectFileType, type FrameData } from '@/lib/image-utils';
+import { Checkbox } from './ui/checkbox';
 
 interface ImageControlsProps {
   onLoadFrames: (frames: string[][][]) => void;
@@ -22,6 +23,7 @@ export const GifControls: React.FC<ImageControlsProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filename, setFilename] = useState('animation');
+  const [useCumulative, setUseCumulative] = useState(true);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -40,7 +42,7 @@ export const GifControls: React.FC<ImageControlsProps> = ({
       let frameData: FrameData[];
 
       if (fileType === 'gif') {
-        const result = await loadGif(file, currentColumns, currentRows);
+        const result = await loadGif(file, currentColumns, currentRows, useCumulative);
         frameData = result.frames;
       } else {
         const result = await loadPng(file, currentColumns, currentRows);
@@ -137,6 +139,21 @@ export const GifControls: React.FC<ImageControlsProps> = ({
             <Upload className="w-4 h-4 mr-2" />
             {isLoading ? 'Loading...' : 'Load GIF/PNG'}
           </Button>
+
+          <div className="items-top flex space-x-2 my-2">
+            <Checkbox id="cumulative" checked={useCumulative} onCheckedChange={(checked) => setUseCumulative(Boolean(checked))} />
+            <div className="grid gap-1.5 leading-none">
+              <label
+                htmlFor="cumulative"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                My GIF is optimized (layers frames)
+              </label>
+              <p className="text-xs text-muted-foreground">
+                Uncheck if your GIF has ghosting or artifacts.
+              </p>
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-2">
             <Button
