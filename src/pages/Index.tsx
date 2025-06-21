@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { ColorPicker } from '@/components/ColorPicker';
 import { RecentColors } from '@/components/RecentColors';
@@ -13,7 +12,7 @@ const Index = () => {
   const [recentColors, setRecentColors] = useState(['#ff0000', '#00ff00', '#0000ff']);
   const [rows, setRows] = useState(8);
   const [columns, setColumns] = useState(16);
-  
+
   // Animation state
   const [totalFrames, setTotalFrames] = useState(8);
   const [currentFrame, setCurrentFrame] = useState(0);
@@ -21,10 +20,10 @@ const Index = () => {
   const [playbackSpeed, setPlaybackSpeed] = useState(10); // FPS
   const [startFrame, setStartFrame] = useState(0);
   const [endFrame, setEndFrame] = useState(7);
-  
+
   // LED colors for all frames
-  const [ledFrames, setLedFrames] = useState<string[][][]>(() => 
-    Array(8).fill(null).map(() => 
+  const [ledFrames, setLedFrames] = useState<string[][][]>(() =>
+    Array(8).fill(null).map(() =>
       Array(8).fill(null).map(() => Array(16).fill('#000000'))
     )
   );
@@ -32,7 +31,7 @@ const Index = () => {
   // Animation playback effect
   useEffect(() => {
     if (!isPlaying) return;
-    
+
     const interval = setInterval(() => {
       setCurrentFrame(prev => {
         const next = prev + 1;
@@ -67,19 +66,19 @@ const Index = () => {
   const handleGridSizeChange = useCallback((newRows: number, newCols: number) => {
     setRows(newRows);
     setColumns(newCols);
-    
+
     // Resize all frames
     setLedFrames(prev => {
       return prev.map(frame => {
         const newGrid = Array(newRows).fill(null).map(() => Array(newCols).fill('#000000'));
-        
+
         // Copy existing colors where possible
         for (let r = 0; r < Math.min(frame.length, newRows); r++) {
           for (let c = 0; c < Math.min(frame[r].length, newCols); c++) {
             newGrid[r][c] = frame[r][c];
           }
         }
-        
+
         return newGrid;
       });
     });
@@ -108,12 +107,12 @@ const Index = () => {
         return prev.slice(0, newFrameCount);
       }
     });
-    
+
     // Adjust current frame if needed
     if (currentFrame >= newFrameCount) {
       setCurrentFrame(newFrameCount - 1);
     }
-    
+
     // Adjust range if needed
     if (endFrame >= newFrameCount) {
       setEndFrame(newFrameCount - 1);
@@ -148,7 +147,7 @@ const Index = () => {
           <div className="lg:col-span-1 space-y-6">
             <Card className="p-4 bg-gray-800 border-gray-700">
               <h2 className="text-xl font-semibold mb-4">Grid Settings</h2>
-              <GridControls 
+              <GridControls
                 rows={rows}
                 columns={columns}
                 onGridSizeChange={handleGridSizeChange}
@@ -184,7 +183,7 @@ const Index = () => {
 
             <Card className="p-4 bg-gray-800 border-gray-700">
               <h2 className="text-xl font-semibold mb-4">Color Picker</h2>
-              <ColorPicker 
+              <ColorPicker
                 selectedColor={selectedColor}
                 onColorChange={handleColorChange}
               />
@@ -192,7 +191,7 @@ const Index = () => {
 
             <Card className="p-4 bg-gray-800 border-gray-700">
               <h2 className="text-xl font-semibold mb-4">Recent Colors</h2>
-              <RecentColors 
+              <RecentColors
                 colors={recentColors}
                 onColorSelect={setSelectedColor}
               />
@@ -205,7 +204,7 @@ const Index = () => {
               <div className="mb-4 text-center">
                 <span className="text-lg font-semibold">Frame {currentFrame + 1} of {totalFrames}</span>
               </div>
-              <LEDGrid 
+              <LEDGrid
                 rows={rows}
                 columns={columns}
                 colors={ledFrames[currentFrame] || []}

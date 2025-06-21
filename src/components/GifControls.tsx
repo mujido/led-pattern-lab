@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +22,7 @@ export const GifControls: React.FC<GifControlsProps> = ({
     // For now, we'll just show a placeholder implementation
     // In a real app, you'd need a GIF parsing library
     console.log('GIF file selected:', file.name);
-    
+
     // Reset the input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -47,7 +46,7 @@ export const GifControls: React.FC<GifControlsProps> = ({
             <Upload className="w-4 h-4 mr-2" />
             Load GIF
           </Button>
-          
+
           <Button
             onClick={onSaveGif}
             variant="outline"
@@ -57,7 +56,7 @@ export const GifControls: React.FC<GifControlsProps> = ({
             Save as GIF
           </Button>
         </div>
-        
+
         <input
           ref={fileInputRef}
           type="file"
@@ -66,7 +65,7 @@ export const GifControls: React.FC<GifControlsProps> = ({
           className="hidden"
         />
       </div>
-      
+
       <div className="text-xs text-gray-400 p-2 bg-gray-800 rounded">
         <p className="mb-1">• Load: Import GIF frames into the editor</p>
         <p>• Save: Export current animation as GIF</p>
