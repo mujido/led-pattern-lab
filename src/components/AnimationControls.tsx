@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { play, pause, skip-back, skip-forward } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward } from 'lucide-react';
 
 interface AnimationControlsProps {
   totalFrames: number;
@@ -35,7 +35,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
   onStartFrameChange,
   onEndFrameChange
 }) => {
-  const Icon = isPlaying ? pause : play;
+  const Icon = isPlaying ? Pause : Play;
 
   return (
     <div className="space-y-4">
@@ -64,7 +64,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
             disabled={currentFrame === 0}
             className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
           >
-            <skip-back className="w-4 h-4" />
+            <SkipBack className="w-4 h-4" />
           </Button>
           
           <Input
@@ -83,7 +83,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
             disabled={currentFrame === totalFrames - 1}
             className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
           >
-            <skip-forward className="w-4 h-4" />
+            <SkipForward className="w-4 h-4" />
           </Button>
         </div>
       </div>
