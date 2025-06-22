@@ -134,16 +134,6 @@ const Index = () => {
     }
   }, [rows, columns, currentFrame, endFrame, startFrame]);
 
-  const handleLoadFrames = useCallback((frames: string[][][]) => {
-    setLedFrames(frames);
-    setTotalFrames(frames.length);
-
-    // Reset frame position
-    setCurrentFrame(0);
-    setStartFrame(0);
-    setEndFrame(frames.length > 0 ? frames.length - 1 : 0);
-  }, []);
-
   const handleSaveFrames = useCallback(() => {
     return ledFrames;
   }, [ledFrames]);
@@ -190,9 +180,8 @@ const Index = () => {
             </Card>
 
             <Card className="p-4 bg-gray-800 border-gray-700">
-              <h2 className="text-xl font-semibold mb-4">Image Tools</h2>
+              <h2 className="text-xl font-semibold mb-4">Export Tools</h2>
               <GifControls
-                onLoadFrames={handleLoadFrames}
                 onSaveFrames={handleSaveFrames}
                 currentRows={rows}
                 currentColumns={columns}
