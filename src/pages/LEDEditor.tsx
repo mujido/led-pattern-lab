@@ -1,3 +1,4 @@
+
 import React, { useState, useCallback, useEffect } from 'react';
 import { ColorPicker } from '@/components/ColorPicker';
 import { RecentColors } from '@/components/RecentColors';
@@ -154,15 +155,6 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     }
   }, [rows, columns, currentFrame, endFrame, startFrame]);
 
-  const handleLoadFrames = useCallback((frames: string[][][]) => {
-    setLedFrames(frames);
-    setTotalFrames(frames.length);
-
-    setCurrentFrame(0);
-    setStartFrame(0);
-    setEndFrame(frames.length > 0 ? frames.length - 1 : 0);
-  }, []);
-
   const handleSaveFrames = useCallback(() => {
     return ledFrames;
   }, [ledFrames]);
@@ -241,9 +233,8 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
             </Card>
 
             <Card className="p-4 bg-gray-800 border-gray-700">
-              <h2 className="text-xl font-semibold mb-4">Image Tools</h2>
+              <h2 className="text-xl font-semibold mb-4">Export Tools</h2>
               <GifControls
-                onLoadFrames={handleLoadFrames}
                 onSaveFrames={handleSaveFrames}
                 currentRows={rows}
                 currentColumns={columns}
