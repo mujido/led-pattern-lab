@@ -1,7 +1,9 @@
-
 import { fileStorage } from './file-storage';
 import { WebSocketStorage } from './websocket-storage';
 import type { LEDFile } from './file-storage';
+
+// Export LEDFile type so it can be used in other files
+export type { LEDFile };
 
 export interface StorageAdapter {
   getAllFiles(): Promise<LEDFile[]>;

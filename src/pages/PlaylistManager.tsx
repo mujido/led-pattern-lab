@@ -57,7 +57,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
       const newPlaylist: Playlist = {
         id: playlistStorage.generateId(),
         name: newPlaylistName.trim(),
-        fileIds: [],
+        items: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -111,11 +111,20 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
   const handleAddFileToPlaylist = async (playlistId: string, fileId: string) => {
     try {
       const playlist = playlists.find(p => p.id === playlistId);
-      if (!playlist || playlist.fileIds.includes(fileId)) return;
+      const file = files.find(f => f.id === fileId);
+      if (!playlist || !file || playlist.items.some(item => item.fileId === fileId)) return;
+
+      const newItem = {
+        id: playlistStorage.generateId(),
+        fileId: fileId,
+        fileName: file.name,
+        playbackRate: 100, // Default 100ms per frame
+        order: playlist.items.length
+      };
 
       const updatedPlaylist = {
         ...playlist,
-        fileIds: [...playlist.fileIds, fileId],
+        items: [...playlist.items, newItem],
         updatedAt: new Date().toISOString()
       };
 
@@ -135,7 +144,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
 
       const updatedPlaylist = {
         ...playlist,
-        fileIds: playlist.fileIds.filter(id => id !== fileId),
+        items: playlist.items.filter(item => item.fileId !== fileId),
         updatedAt: new Date().toISOString()
       };
 
@@ -282,7 +291,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
                           <div>
                             <h3 className="text-lg font-semibold">{playlist.name}</h3>
                             <p className="text-sm text-gray-400">
-                              {playlist.fileIds.length} file{playlist.fileIds.length !== 1 ? 's' : ''}
+                              {playlist.items.length} file{playlist.items.length !== 1 ? 's' : ''}
                             </p>
                           </div>
                           <div className="flex gap-2">
@@ -331,18 +340,18 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
 
                     <div className="space-y-2">
                       <h4 className="text-sm font-medium text-gray-300">Files in this playlist:</h4>
-                      {playlist.fileIds.length === 0 ? (
+                      {playlist.items.length === 0 ? (
                         <p className="text-sm text-gray-500">No files added yet</p>
                       ) : (
                         <div className="flex flex-wrap gap-2">
-                          {playlist.fileIds.map((fileId) => (
+                          {playlist.items.map((item) => (
                             <div
-                              key={fileId}
+                              key={item.id}
                               className="flex items-center gap-2 bg-gray-600 px-3 py-1 rounded-full text-sm"
                             >
-                              <span>{getFileName(fileId)}</span>
+                              <span>{item.fileName}</span>
                               <button
-                                onClick={() => handleRemoveFileFromPlaylist(playlist.id, fileId)}
+                                onClick={() => handleRemoveFileFromPlaylist(playlist.id, item.fileId)}
                                 className="text-red-400 hover:text-red-300"
                               >
                                 <X className="w-3 h-3" />
@@ -356,7 +365,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
                         <h5 className="text-sm font-medium text-gray-300 mb-2">Add files:</h5>
                         <div className="flex flex-wrap gap-2">
                           {files
-                            .filter((file) => !playlist.fileIds.includes(file.id))
+                            .filter((file) => !playlist.items.some(item => item.fileId === file.id))
                             .map((file) => (
                               <Button
                                 key={file.id}
@@ -370,7 +379,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
                               </Button>
                             ))}
                         </div>
-                        {files.filter((file) => !playlist.fileIds.includes(file.id)).length === 0 && (
+                        {files.filter((file) => !playlist.items.some(item => item.fileId === file.id)).length === 0 && (
                           <p className="text-xs text-gray-500">All files are already in this playlist</p>
                         )}
                       </div>
