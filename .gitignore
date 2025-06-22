@@ -27,3 +27,11 @@ sdkconfig
 *.sln
 *.sw?
 .cache
+
+# ESP32 specific
+sdkconfig.old
+managed_components
+dependencies.lock
+
+# Build artifacts
+build/

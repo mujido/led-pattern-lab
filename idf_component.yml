@@ -1,3 +1,4 @@
 dependencies:
   fastled/fastled: "^3.5.0"
   espressif/esp_websocket_client: "^1.2.0"
+  espressif/spiffs: "^1.0.0"

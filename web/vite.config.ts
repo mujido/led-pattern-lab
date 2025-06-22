@@ -10,6 +10,24 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
   },
+  base: './', // Use relative paths for ESP32 deployment
+  build: {
+    outDir: 'dist',
+    assetsDir: '', // Empty string puts assets in root for SPIFFS compatibility
+    sourcemap: false, // Disable sourcemaps to save space
+    minify: 'terser', // Use terser for better minification
+    terserOptions: {
+      compress: {
+        drop_console: true, // Remove console.log in production
+        drop_debugger: true,
+      },
+    },
+    rollupOptions: {
+      output: {
+        manualChunks: undefined, // Disable code splitting for simpler deployment
+      },
+    },
+  },
   plugins: [
     react(),
     nodePolyfills(),

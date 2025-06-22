@@ -1,73 +1,180 @@
-# Welcome to your Lovable project
+# LED Pattern Lab - ESP32 Edition
 
-## Project info
+A React-based LED pattern designer that runs on ESP32 with WiFi connectivity and serves a web interface for creating and controlling LED animations.
 
-**URL**: https://lovable.dev/projects/56a05f13-9746-4b2d-ae36-4ad703eea5e6
+## Features
 
-## How can I edit this code?
+- **Web-based LED Designer**: Create LED patterns with a modern React interface
+- **ESP32 Integration**: Runs directly on ESP32 hardware with WiFi connectivity
+- **GIF/PNG Support**: Import and export LED patterns as GIF or PNG files
+- **Real-time Control**: Control LED strips in real-time through the web interface
+- **Responsive Design**: Works on desktop and mobile devices
+- **SPIFFS Storage**: Web files stored in ESP32's SPIFFS filesystem
+- **CMake Integration**: Automatic web build integration with ESP-IDF
 
-There are several ways of editing your application.
+## Quick Start
 
-**Use Lovable**
+### Prerequisites
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/56a05f13-9746-4b2d-ae36-4ad703eea5e6) and start prompting.
+1. **ESP-IDF Development Environment**
+   ```bash
+   source $HOME/esp/esp-idf/export.sh
+   ```
 
-Changes made via Lovable will be committed automatically to this repo.
+2. **Node.js and npm**
+   ```bash
+   node --version  # Should be v18+
+   npm --version   # Should be v8+
+   ```
 
-**Use your preferred IDE**
+3. **ESP32 Hardware**
+   - ESP32 development board
+   - WS2812B LED strip (or compatible)
+   - USB cable
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Build and Deploy
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. **Source ESP-IDF Environment**
+   ```bash
+   source $HOME/esp/esp-idf/export.sh
+   ```
 
-Follow these steps:
+2. **Build Everything (CMake Integration)**
+   ```bash
+   ./build-cmake.sh
+   ```
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+3. **Deploy to ESP32**
+   ```bash
+   ./deploy.sh
+   ```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+4. **Monitor and Configure**
+   ```bash
+   idf.py monitor
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+## Build Options
+
+### Option 1: Integrated CMake Build (Recommended)
+```bash
+source $HOME/esp/esp-idf/export.sh
+./build-cmake.sh
 ```
 
-**Edit a file directly in GitHub**
+### Option 2: Direct ESP-IDF Commands
+```bash
+source $HOME/esp/esp-idf/export.sh
+idf.py build          # Automatically includes web build
+idf.py flash spiffs-flash
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Option 3: Manual Build Process
+```bash
+source $HOME/esp/esp-idf/export.sh
+./build-web.sh        # Build web only
+idf.py build          # Build firmware only
+./build-all.sh        # Build everything manually
+```
 
-**Use GitHub Codespaces**
+## Development
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Web Development
+```bash
+cd web
+npm install
+npm run dev      # Development server
+npm run build    # Production build
+```
 
-## What technologies are used for this project?
+### Firmware Development
+```bash
+source $HOME/esp/esp-idf/export.sh
+idf.py build     # Build firmware (includes web)
+idf.py flash     # Flash firmware
+idf.py monitor   # Monitor output
+```
 
-This project is built with:
+### Configuration
+```bash
+source $HOME/esp/esp-idf/export.sh
+idf.py menuconfig  # Configure WiFi, LED count, GPIO pin
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Project Structure
 
-## How can I deploy this project?
+```
+led-pattern-lab/
+├── web/                    # React web application
+│   ├── src/               # Source code
+│   ├── dist/              # Built web files (generated)
+│   └── package.json       # Web dependencies
+├── main/                  # ESP32 firmware
+│   ├── main.cpp          # Main firmware code
+│   ├── web/              # Web files for SPIFFS (generated)
+│   └── CMakeLists.txt    # Firmware build config
+├── build-cmake.sh        # CMake-integrated build script
+├── build-all.sh          # Complete build script
+├── build-web.sh          # Web-only build script
+├── deploy.sh             # Deployment script
+├── partitions.csv        # ESP32 partition table
+└── CMakeLists.txt        # Project configuration
+```
 
-Simply open [Lovable](https://lovable.dev/projects/56a05f13-9746-4b2d-ae36-4ad703eea5e6) and click on Share -> Publish.
+## CMake Integration
 
-## Can I connect a custom domain to my Lovable project?
+The project includes seamless CMake integration that automatically:
+- Detects Node.js and npm availability
+- Builds the web application during firmware build
+- Copies web files to the ESP32 project
+- Handles dependencies between web and firmware builds
 
-Yes, you can!
+### CMake Targets
+- `web-build`: Builds and copies web files
+- `web-clean`: Cleans web build artifacts
+- `idf.py build`: Automatically includes web build
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Technologies Used
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Web Frontend
+- **React 18** with TypeScript
+- **Vite** for fast development and optimized builds
+- **shadcn/ui** for modern UI components
+- **Tailwind CSS** for styling
+- **gif.js** and **pngjs** for image processing
+
+### ESP32 Firmware
+- **ESP-IDF** framework
+- **ESP32 HTTP Server** for web interface
+- **SPIFFS** for file storage
+- **WiFi** connectivity
+- **FastLED** library (planned)
+
+## Performance
+
+- **Web Bundle**: ~700KB (compressed to ~200KB)
+- **SPIFFS Usage**: ~700KB of 3MB available
+- **Memory**: Optimized for ESP32's limited RAM
+- **Network**: Efficient static file serving over WiFi
+- **Build Time**: ~3 seconds for web, ~30 seconds for firmware
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test with `./build-cmake.sh`
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Support
+
+For issues and questions:
+1. Check [DEPLOYMENT.md](DEPLOYMENT.md) for troubleshooting
+2. Review ESP-IDF documentation
+3. Open an issue on GitHub
