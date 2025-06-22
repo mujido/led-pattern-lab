@@ -6,15 +6,16 @@ import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { FilePreview } from '@/components/FilePreview';
 import { fileStorage, type LEDFile } from '@/lib/file-storage';
-import { Plus, FilePen, Trash2, Palette } from 'lucide-react';
+import { Plus, FilePen, Trash2, Palette, List } from 'lucide-react';
 import { storageAdapter } from '@/lib/storage-adapter';
 
 interface FileManagerProps {
   onOpenFile: (fileId: string) => void;
   onCreateNew: () => void;
+  onOpenPlaylists: () => void;
 }
 
-export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNew }) => {
+export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNew, onOpenPlaylists }) => {
   const [files, setFiles] = useState<LEDFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [newFileName, setNewFileName] = useState('');
@@ -84,6 +85,15 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
             LED Pattern Files
           </h1>
           <p className="text-gray-400">Manage your LED pattern designs</p>
+          <div className="flex justify-center gap-4 mt-4">
+            <Button 
+              onClick={onOpenPlaylists}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              <List className="w-4 h-4 mr-2" />
+              Manage Playlists
+            </Button>
+          </div>
         </header>
 
         <div className="grid lg:grid-cols-3 gap-6">

@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { FileManager } from './pages/FileManager';
+import { PlaylistManager } from './pages/PlaylistManager';
 import LEDEditor from "./pages/LEDEditor";
 
 const App = () => {
-  const [currentView, setCurrentView] = useState<'files' | 'editor'>('files');
+  const [currentView, setCurrentView] = useState<'files' | 'editor' | 'playlists'>('files');
   const [currentFileId, setCurrentFileId] = useState<string | null>(null);
 
   const handleOpenFile = (fileId: string) => {
@@ -24,6 +25,10 @@ const App = () => {
     setCurrentFileId(null);
   };
 
+  const handleOpenPlaylists = () => {
+    setCurrentView('playlists');
+  };
+
   return (
     <TooltipProvider>
       <Sonner />
@@ -31,6 +36,11 @@ const App = () => {
         <FileManager 
           onOpenFile={handleOpenFile}
           onCreateNew={handleCreateNew}
+          onOpenPlaylists={handleOpenPlaylists}
+        />
+      ) : currentView === 'playlists' ? (
+        <PlaylistManager 
+          onBackToFiles={handleBackToFiles}
         />
       ) : (
         <LEDEditor 
