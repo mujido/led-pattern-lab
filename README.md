@@ -1,140 +1,148 @@
-# LED Pattern Lab - ESP32 Edition
+# LED Matrix Designer
 
-A React-based LED pattern designer that runs on ESP32 with WiFi connectivity and serves a web interface for creating and controlling LED animations.
+A React-based LED matrix designer that communicates with LED hardware via WebSocket API. The web interface allows you to create, edit, and control LED patterns in real-time.
+
+## Project Structure
+
+This project is organized into two main components:
+
+- **LED Matrix Designer** (`led-pattern-lab/`): The React-based web interface for designing LED patterns
+- **ESP32 LED Matrix Driver** (`esp32_led_strip_designer/`): An example implementation using ESP32 hardware
 
 ## Features
 
 - **Web-based LED Designer**: Create LED patterns with a modern React interface
-- **ESP32 Integration**: Runs directly on ESP32 hardware with WiFi connectivity
+- **Real-time Control**: Control LED strips in real-time through WebSocket communication
 - **GIF/PNG Support**: Import and export LED patterns as GIF or PNG files
-- **Real-time Control**: Control LED strips in real-time through the web interface
 - **Responsive Design**: Works on desktop and mobile devices
-- **SPIFFS Storage**: Web files stored in ESP32's SPIFFS filesystem
-- **CMake Integration**: Automatic web build integration with ESP-IDF
+- **Hardware Agnostic**: Uses WebSocket API that can work with any compatible backend
+
+## WebSocket API Protocol
+
+The LED Matrix Designer communicates with LED hardware using a WebSocket API. The protocol supports:
+
+### Connection
+- **URL**: `ws://[device-ip]:8080/ws`
+- **Protocol**: Binary WebSocket messages
+
+### Message Format
+All messages use a binary format with the following structure:
+```
+[Command Byte][Length][Data...]
+```
+
+### Commands
+
+#### 0x01 - Set LED Color
+Sets a single LED to a specific color.
+```
+[0x01][4 bytes][LED Index (2 bytes)][RGB Color (3 bytes)]
+```
+
+#### 0x02 - Set Multiple LEDs
+Sets multiple LEDs to specific colors.
+```
+[0x02][Length][LED Data...]
+```
+Where LED Data is: `[Index (2 bytes)][RGB (3 bytes)]` repeated for each LED.
+
+#### 0x03 - Clear All LEDs
+Turns off all LEDs.
+```
+[0x03][0 bytes]
+```
+
+#### 0x04 - Set Brightness
+Sets the overall brightness (0-255).
+```
+[0x04][1 byte][Brightness]
+```
+
+#### 0x05 - Get LED Count
+Requests the total number of LEDs.
+```
+[0x05][0 bytes]
+```
+
+#### 0x06 - LED Count Response
+Response with the total number of LEDs.
+```
+[0x06][2 bytes][LED Count]
+```
+
+### Example Implementation
+The ESP32 LED Matrix Driver provides a complete implementation of this protocol, but you can implement it on any platform that supports WebSockets.
 
 ## Quick Start
 
 ### Prerequisites
 
-1. **ESP-IDF Development Environment**
-   ```bash
-   source $HOME/esp/esp-idf/export.sh
-   ```
-
-2. **Node.js and npm**
+1. **Node.js and npm** (for web development)
    ```bash
    node --version  # Should be v18+
    npm --version   # Should be v8+
    ```
 
-3. **ESP32 Hardware**
-   - ESP32 development board
-   - WS2812B LED strip (or compatible)
-   - USB cable
+2. **LED Hardware** (optional)
+   - Any hardware that implements the WebSocket API
+   - ESP32 with WS2812B LED strip (example implementation)
 
-### Build and Deploy
+### Web Development
 
-1. **Source ESP-IDF Environment**
+1. **Install Dependencies**
    ```bash
-   source $HOME/esp/esp-idf/export.sh
+   npm install
    ```
 
-2. **Build Everything (CMake Integration)**
+2. **Development Server**
    ```bash
-   ./build-cmake.sh
+   npm run dev
    ```
 
-3. **Deploy to ESP32**
+3. **Production Build**
    ```bash
-   ./deploy.sh
+   npm run build
    ```
 
-4. **Monitor and Configure**
-   ```bash
-   idf.py monitor
-   ```
+### Hardware Implementation
 
-For detailed deployment instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
-
-## Build Options
-
-### Option 1: Integrated CMake Build (Recommended)
-```bash
-source $HOME/esp/esp-idf/export.sh
-./build-cmake.sh
-```
-
-### Option 2: Direct ESP-IDF Commands
-```bash
-source $HOME/esp/esp-idf/export.sh
-idf.py build          # Automatically includes web build
-idf.py flash spiffs-flash
-```
-
-### Option 3: Manual Build Process
-```bash
-source $HOME/esp/esp-idf/export.sh
-./build-web.sh        # Build web only
-idf.py build          # Build firmware only
-./build-all.sh        # Build everything manually
-```
+For an example ESP32 implementation, see the [ESP32 LED Matrix Driver README](esp32_led_strip_designer/README.md).
 
 ## Development
 
 ### Web Development
 ```bash
-cd web
 npm install
 npm run dev      # Development server
 npm run build    # Production build
 ```
 
-### Firmware Development
+### Testing with Mock Hardware
+The web interface includes a mock mode for testing without hardware:
 ```bash
-source $HOME/esp/esp-idf/export.sh
-idf.py build     # Build firmware (includes web)
-idf.py flash     # Flash firmware
-idf.py monitor   # Monitor output
-```
-
-### Configuration
-```bash
-source $HOME/esp/esp-idf/export.sh
-idf.py menuconfig  # Configure WiFi, LED count, GPIO pin
+npm run dev
+# Open browser and enable "Mock Mode" in settings
 ```
 
 ## Project Structure
 
 ```
 led-pattern-lab/
-├── web/                    # React web application
-│   ├── src/               # Source code
-│   ├── dist/              # Built web files (generated)
-│   └── package.json       # Web dependencies
-├── main/                  # ESP32 firmware
-│   ├── main.cpp          # Main firmware code
+├── src/                    # React web application source
+│   ├── components/        # React components
+│   ├── pages/            # Page components
+│   ├── lib/              # Utility libraries
+│   │   └── websocket.ts  # WebSocket API implementation
+│   └── main.tsx          # Application entry point
+├── public/               # Static assets
+├── package.json          # Web dependencies
+├── esp32_led_strip_designer/  # Example ESP32 implementation
+│   ├── main/             # ESP32 source code
 │   ├── web/              # Web files for SPIFFS (generated)
-│   └── CMakeLists.txt    # Firmware build config
-├── build-cmake.sh        # CMake-integrated build script
-├── build-all.sh          # Complete build script
-├── build-web.sh          # Web-only build script
-├── deploy.sh             # Deployment script
-├── partitions.csv        # ESP32 partition table
-└── CMakeLists.txt        # Project configuration
+│   ├── CMakeLists.txt    # ESP32 build configuration
+│   └── README.md         # ESP32-specific documentation
+└── README.md             # This file
 ```
-
-## CMake Integration
-
-The project includes seamless CMake integration that automatically:
-- Detects Node.js and npm availability
-- Builds the web application during firmware build
-- Copies web files to the ESP32 project
-- Handles dependencies between web and firmware builds
-
-### CMake Targets
-- `web-build`: Builds and copies web files
-- `web-clean`: Cleans web build artifacts
-- `idf.py build`: Automatically includes web build
 
 ## Technologies Used
 
@@ -144,29 +152,28 @@ The project includes seamless CMake integration that automatically:
 - **shadcn/ui** for modern UI components
 - **Tailwind CSS** for styling
 - **gif.js** and **pngjs** for image processing
+- **WebSocket API** for real-time communication
 
-### ESP32 Firmware
-- **ESP-IDF** framework
+### Example Hardware Implementation
+- **ESP-IDF** framework (ESP32 example)
 - **ESP32 HTTP Server** for web interface
-- **SPIFFS** for file storage
-- **WiFi** connectivity
-- **FastLED** library (planned)
-
-## Performance
-
-- **Web Bundle**: ~700KB (compressed to ~200KB)
-- **SPIFFS Usage**: ~700KB of 3MB available
-- **Memory**: Optimized for ESP32's limited RAM
-- **Network**: Efficient static file serving over WiFi
-- **Build Time**: ~3 seconds for web, ~30 seconds for firmware
+- **WebSocket Server** for real-time communication
+- **SPIFFS** for file storage (ESP32 example)
 
 ## Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test with `./build-cmake.sh`
+4. Test both web and hardware components
 5. Submit a pull request
+
+## Credits
+
+This project was developed with the assistance of:
+- **[lovable.dev](https://lovable.dev)** - AI-powered development platform that helped create the initial React web interface
+- **[Cursor](https://cursor.sh)** - AI-powered IDE that hosted the development environment and AI assistant
+- **Claude Sonnet 4** - AI assistant that helped with project organization, documentation, and WebSocket API design
 
 ## License
 
@@ -175,6 +182,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 For issues and questions:
-1. Check [DEPLOYMENT.md](DEPLOYMENT.md) for troubleshooting
-2. Review ESP-IDF documentation
+1. Check the [ESP32 LED Matrix Driver README](esp32_led_strip_designer/README.md) for the example implementation
+2. Review the WebSocket API documentation above
 3. Open an issue on GitHub
