@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { FilePreview } from '@/components/FilePreview';
 import { fileStorage, type LEDFile } from '@/lib/file-storage';
-import { Plus, FileOpen, Trash2, Palette } from 'lucide-react';
+import { Plus, FilePen, Trash2, Palette } from 'lucide-react';
 
 interface FileManagerProps {
   onOpenFile: (fileId: string) => void;
@@ -178,7 +178,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
                     onClick={() => onOpenFile(selectedFileData.id)}
                     className="w-full bg-green-600 hover:bg-green-700"
                   >
-                    <FileOpen className="w-4 h-4 mr-2" />
+                    <FilePen className="w-4 h-4 mr-2" />
                     Open File
                   </Button>
 
