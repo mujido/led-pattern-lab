@@ -1,18 +1,18 @@
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ColorPicker } from '@/components/ColorPicker';
 import { RecentColors } from '@/components/RecentColors';
 import { LEDGrid } from '@/components/LEDGrid';
 import { GridControls } from '@/components/GridControls';
 import { AnimationControls } from '@/components/AnimationControls';
-import { GifControls } from '@/components/GifControls';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ArrowLeft, Save, ChevronDown, ChevronUp, Upload, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Save, ChevronDown, ChevronUp, Upload, AlertCircle, Download, FileImage } from 'lucide-react';
 import { fileStorage, type LEDFile } from '@/lib/file-storage';
-import { loadGif, loadPng, detectFileType, type FrameData } from '@/lib/image-utils';
+import { loadGif, loadPng, detectFileType, saveAsGif, saveAsPng, type FrameData } from '@/lib/image-utils';
 import { toast } from 'sonner';
 
 interface LEDEditorProps {
@@ -35,7 +35,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
   const [fileName, setFileName] = useState('Untitled');
 
   // Single expanded panel state
-  const [expandedPanel, setExpandedPanel] = useState<'grid' | 'colors' | 'animation' | 'import' | 'export' | null>('grid');
+  const [expandedPanel, setExpandedPanel] = useState<'grid' | 'colors' | 'animation' | 'importexport' | null>('grid');
 
   // Animation state
   const [totalFrames, setTotalFrames] = useState(8);
@@ -52,10 +52,11 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     )
   );
 
-  // Import state
+  // Import/Export state
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isImporting, setIsImporting] = useState(false);
-  const [importError, setImportError] = useState<string | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
+  const [importExportError, setImportExportError] = useState<string | null>(null);
   const [useCumulative, setUseCumulative] = useState(true);
   const [importRows, setImportRows] = useState(8);
   const [importColumns, setImportColumns] = useState(32);
@@ -178,10 +179,6 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     }
   }, [rows, columns, currentFrame, endFrame, startFrame]);
 
-  const handleSaveFrames = useCallback(() => {
-    return ledFrames;
-  }, [ledFrames]);
-
   const handleSaveFile = () => {
     const fileData: LEDFile = {
       id: fileId || fileStorage.generateId(),
@@ -198,7 +195,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     toast.success('File saved successfully!');
   };
 
-  const togglePanel = (panel: 'grid' | 'colors' | 'animation' | 'import' | 'export') => {
+  const togglePanel = (panel: 'grid' | 'colors' | 'animation' | 'importexport') => {
     setExpandedPanel(prev => prev === panel ? null : panel);
   };
 
@@ -208,7 +205,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     children 
   }: { 
     title: string; 
-    panelKey: 'grid' | 'colors' | 'animation' | 'import' | 'export'; 
+    panelKey: 'grid' | 'colors' | 'animation' | 'importexport'; 
     children: React.ReactNode;
   }) => {
     const isExpanded = expandedPanel === panelKey;
@@ -252,7 +249,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     if (!file) return;
 
     setIsImporting(true);
-    setImportError(null);
+    setImportExportError(null);
 
     try {
       const fileType = detectFileType(file);
@@ -289,7 +286,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
       toast.success(`Imported ${frames.length} frame${frames.length !== 1 ? 's' : ''} successfully!`);
 
     } catch (err) {
-      setImportError(err instanceof Error ? err.message : 'Failed to load file');
+      setImportExportError(err instanceof Error ? err.message : 'Failed to load file');
     } finally {
       setIsImporting(false);
       if (fileInputRef.current) {
@@ -300,6 +297,46 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
 
   const handleImportClick = () => {
     fileInputRef.current?.click();
+  };
+
+  const handleSaveAsGif = async () => {
+    try {
+      setIsExporting(true);
+      setImportExportError(null);
+
+      const frameData: FrameData[] = ledFrames.map(frame => ({
+        width: columns,
+        height: rows,
+        pixels: frame
+      }));
+
+      await saveAsGif(frameData, `${fileName}.gif`);
+      toast.success('GIF exported successfully!');
+    } catch (err) {
+      setImportExportError(err instanceof Error ? err.message : 'Failed to save GIF');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleSaveAsPng = async () => {
+    try {
+      setIsExporting(true);
+      setImportExportError(null);
+
+      const frameData: FrameData[] = ledFrames.map(frame => ({
+        width: columns,
+        height: rows,
+        pixels: frame
+      }));
+
+      await saveAsPng(frameData, `${fileName}.png`);
+      toast.success('PNG exported successfully!');
+    } catch (err) {
+      setImportExportError(err instanceof Error ? err.message : 'Failed to save PNG');
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -373,8 +410,9 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
               />
             </CollapsibleCard>
 
-            <CollapsibleCard title="Import GIF/PNG" panelKey="import">
+            <CollapsibleCard title="Import/Export" panelKey="importexport">
               <div className="space-y-4">
+                {/* Import Section */}
                 <div>
                   <Label className="text-sm text-gray-300 mb-2 block">Import Animation</Label>
                   <Button
@@ -460,16 +498,43 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
                   </div>
                 </div>
 
-                {importError && (
+                {/* Export Section */}
+                <div className="border-t border-gray-600 pt-4">
+                  <Label className="text-sm text-gray-300 mb-2 block">Export Animation</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      onClick={handleSaveAsGif}
+                      variant="outline"
+                      disabled={isExporting}
+                      className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600 disabled:opacity-50"
+                    >
+                      <Download className="w-4 h-4 mr-2" />
+                      Save GIF
+                    </Button>
+
+                    <Button
+                      onClick={handleSaveAsPng}
+                      variant="outline"
+                      disabled={isExporting}
+                      className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600 disabled:opacity-50"
+                    >
+                      <FileImage className="w-4 h-4 mr-2" />
+                      Save PNG
+                    </Button>
+                  </div>
+                </div>
+
+                {importExportError && (
                   <div className="flex items-center gap-2 text-red-400 text-xs p-2 bg-red-900/20 border border-red-800 rounded">
                     <AlertCircle className="w-4 h-4" />
-                    {importError}
+                    {importExportError}
                   </div>
                 )}
 
                 <div className="text-xs text-gray-400 p-2 bg-gray-800 rounded">
-                  <p className="mb-1">• Imports will replace current animation</p>
-                  <p>• Supports GIF and PNG files</p>
+                  <p className="mb-1">• Import: Replace current animation with GIF/PNG</p>
+                  <p className="mb-1">• Export GIF: Save as animated GIF</p>
+                  <p>• Export PNG: Save first frame as PNG</p>
                 </div>
 
                 <input
@@ -480,14 +545,6 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
                   className="hidden"
                 />
               </div>
-            </CollapsibleCard>
-
-            <CollapsibleCard title="Export Tools" panelKey="export">
-              <GifControls
-                onSaveFrames={handleSaveFrames}
-                currentRows={rows}
-                currentColumns={columns}
-              />
             </CollapsibleCard>
           </div>
 
