@@ -154,7 +154,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
             </h1>
             <p className="text-gray-400">Assemble LED patterns into continuous loops</p>
           </div>
-          <Button onClick={onBackToFiles} variant="outline" className="border-gray-600">
+          <Button onClick={onBackToFiles} variant="outline" className="border-gray-600 bg-gray-800 text-white hover:bg-gray-700">
             <List className="w-4 h-4 mr-2" />
             Back to Files
           </Button>
