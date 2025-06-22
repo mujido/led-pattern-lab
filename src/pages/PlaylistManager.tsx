@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -168,7 +167,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
                 <h2 className="text-lg font-semibold">Playlists</h2>
                 <AlertDialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                   <AlertDialogTrigger asChild>
-                    <Button size="sm" className="bg-purple-600 hover:bg-purple-700">
+                    <Button size="sm">
                       <Plus className="w-4 h-4" />
                     </Button>
                   </AlertDialogTrigger>
@@ -261,7 +260,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
                 </h2>
                 {selectedPlaylist && (
                   <div className="flex gap-2">
-                    <Button size="sm" className="bg-green-600 hover:bg-green-700">
+                    <Button size="sm">
                       <Play className="w-4 h-4 mr-2" />
                       Deploy
                     </Button>

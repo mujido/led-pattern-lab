@@ -88,7 +88,6 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
           <div className="flex justify-center gap-4 mt-4">
             <Button 
               onClick={onOpenPlaylists}
-              className="bg-purple-600 hover:bg-purple-700"
             >
               <List className="w-4 h-4 mr-2" />
               Manage Playlists
@@ -104,7 +103,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
                 <h2 className="text-xl font-semibold">Your Files</h2>
                 <AlertDialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                   <AlertDialogTrigger asChild>
-                    <Button className="bg-blue-600 hover:bg-blue-700">
+                    <Button>
                       <Plus className="w-4 h-4 mr-2" />
                       New File
                     </Button>
@@ -207,7 +206,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
 
                   <Button
                     onClick={() => onOpenFile(selectedFileData.id)}
-                    className="w-full bg-green-600 hover:bg-green-700"
+                    className="w-full"
                   >
                     <FilePen className="w-4 h-4 mr-2" />
                     Open File
