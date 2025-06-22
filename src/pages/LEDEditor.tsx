@@ -23,14 +23,8 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
   const [columns, setColumns] = useState(16);
   const [fileName, setFileName] = useState('Untitled');
 
-  // Collapsible panel states
-  const [expandedPanels, setExpandedPanels] = useState({
-    grid: true,
-    animation: true,
-    export: false,
-    colorPicker: true,
-    recentColors: false
-  });
+  // Single expanded panel state
+  const [expandedPanel, setExpandedPanel] = useState<'grid' | 'animation' | 'export' | 'colorPicker' | 'recentColors' | null>('grid');
 
   // Animation state
   const [totalFrames, setTotalFrames] = useState(8);
@@ -183,11 +177,8 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     toast.success('File saved successfully!');
   };
 
-  const togglePanel = (panel: keyof typeof expandedPanels) => {
-    setExpandedPanels(prev => ({
-      ...prev,
-      [panel]: !prev[panel]
-    }));
+  const togglePanel = (panel: 'grid' | 'animation' | 'export' | 'colorPicker' | 'recentColors') => {
+    setExpandedPanel(prev => prev === panel ? null : panel);
   };
 
   const CollapsibleCard = ({ 
@@ -196,10 +187,10 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     children 
   }: { 
     title: string; 
-    panelKey: keyof typeof expandedPanels; 
+    panelKey: 'grid' | 'animation' | 'export' | 'colorPicker' | 'recentColors'; 
     children: React.ReactNode;
   }) => {
-    const isExpanded = expandedPanels[panelKey];
+    const isExpanded = expandedPanel === panelKey;
     const Icon = isExpanded ? ChevronUp : ChevronDown;
 
     return (
