@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import { ColorPicker } from '@/components/ColorPicker';
 import { RecentColors } from '@/components/RecentColors';
@@ -8,7 +7,7 @@ import { AnimationControls } from '@/components/AnimationControls';
 import { GifControls } from '@/components/GifControls';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, ChevronDown, ChevronUp } from 'lucide-react';
 import { fileStorage, type LEDFile } from '@/lib/file-storage';
 import { toast } from 'sonner';
 
@@ -23,6 +22,15 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
   const [rows, setRows] = useState(8);
   const [columns, setColumns] = useState(16);
   const [fileName, setFileName] = useState('Untitled');
+
+  // Collapsible panel states
+  const [expandedPanels, setExpandedPanels] = useState({
+    grid: true,
+    animation: true,
+    export: false,
+    colorPicker: true,
+    recentColors: false
+  });
 
   // Animation state
   const [totalFrames, setTotalFrames] = useState(8);
@@ -175,6 +183,43 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     toast.success('File saved successfully!');
   };
 
+  const togglePanel = (panel: keyof typeof expandedPanels) => {
+    setExpandedPanels(prev => ({
+      ...prev,
+      [panel]: !prev[panel]
+    }));
+  };
+
+  const CollapsibleCard = ({ 
+    title, 
+    panelKey, 
+    children 
+  }: { 
+    title: string; 
+    panelKey: keyof typeof expandedPanels; 
+    children: React.ReactNode;
+  }) => {
+    const isExpanded = expandedPanels[panelKey];
+    const Icon = isExpanded ? ChevronUp : ChevronDown;
+
+    return (
+      <Card className="bg-gray-800 border-gray-700">
+        <button
+          onClick={() => togglePanel(panelKey)}
+          className="w-full p-4 flex items-center justify-between text-left hover:bg-gray-700/50 transition-colors"
+        >
+          <h2 className="text-xl font-semibold">{title}</h2>
+          <Icon className="w-5 h-5" />
+        </button>
+        {isExpanded && (
+          <div className="px-4 pb-4">
+            {children}
+          </div>
+        )}
+      </Card>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4">
       <div className="mx-auto">
@@ -204,18 +249,16 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
 
         <div className="grid lg:grid-cols-5 gap-6">
           <div className="lg:col-span-1 space-y-6">
-            <Card className="p-4 bg-gray-800 border-gray-700">
-              <h2 className="text-xl font-semibold mb-4">Grid Settings</h2>
+            <CollapsibleCard title="Grid Settings" panelKey="grid">
               <GridControls
                 rows={rows}
                 columns={columns}
                 onGridSizeChange={handleGridSizeChange}
                 onClearGrid={clearGrid}
               />
-            </Card>
+            </CollapsibleCard>
 
-            <Card className="p-4 bg-gray-800 border-gray-700">
-              <h2 className="text-xl font-semibold mb-4">Animation</h2>
+            <CollapsibleCard title="Animation" panelKey="animation">
               <AnimationControls
                 totalFrames={totalFrames}
                 currentFrame={currentFrame}
@@ -230,32 +273,29 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
                 onStartFrameChange={setStartFrame}
                 onEndFrameChange={setEndFrame}
               />
-            </Card>
+            </CollapsibleCard>
 
-            <Card className="p-4 bg-gray-800 border-gray-700">
-              <h2 className="text-xl font-semibold mb-4">Export Tools</h2>
+            <CollapsibleCard title="Export Tools" panelKey="export">
               <GifControls
                 onSaveFrames={handleSaveFrames}
                 currentRows={rows}
                 currentColumns={columns}
               />
-            </Card>
+            </CollapsibleCard>
 
-            <Card className="p-4 bg-gray-800 border-gray-700">
-              <h2 className="text-xl font-semibold mb-4">Color Picker</h2>
+            <CollapsibleCard title="Color Picker" panelKey="colorPicker">
               <ColorPicker
                 selectedColor={selectedColor}
                 onColorChange={handleColorChange}
               />
-            </Card>
+            </CollapsibleCard>
 
-            <Card className="p-4 bg-gray-800 border-gray-700">
-              <h2 className="text-xl font-semibold mb-4">Recent Colors</h2>
+            <CollapsibleCard title="Recent Colors" panelKey="recentColors">
               <RecentColors
                 colors={recentColors}
                 onColorSelect={setSelectedColor}
               />
-            </Card>
+            </CollapsibleCard>
           </div>
 
           {/* LED Grid */}
