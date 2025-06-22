@@ -1,4 +1,3 @@
-
 export interface LEDFile {
   id: string;
   name: string;
@@ -12,6 +11,7 @@ export interface LEDFile {
 
 const STORAGE_KEY = 'led-pattern-files';
 
+// Keep the original localStorage implementation for backward compatibility
 export const fileStorage = {
   getAllFiles(): LEDFile[] {
     try {

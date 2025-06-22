@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ColorPicker } from '@/components/ColorPicker';
 import { RecentColors } from '@/components/RecentColors';
@@ -14,6 +13,7 @@ import { ArrowLeft, Save, ChevronDown, ChevronUp, Upload, AlertCircle, Download,
 import { fileStorage, type LEDFile } from '@/lib/file-storage';
 import { loadGif, loadPng, detectFileType, saveAsGif, saveAsPng, type FrameData } from '@/lib/image-utils';
 import { toast } from 'sonner';
+import { storageAdapter } from '@/lib/storage-adapter';
 
 interface LEDEditorProps {
   fileId: string | null;
@@ -65,31 +65,39 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
 
   // Load file if fileId is provided
   useEffect(() => {
-    if (fileId) {
-      const file = fileStorage.getFile(fileId);
-      if (file) {
-        setFileName(file.name);
-        setRows(file.rows);
-        setColumns(file.columns);
-        setTotalFrames(file.totalFrames);
-        setLedFrames(file.frames);
+    const loadFile = async () => {
+      if (fileId) {
+        try {
+          const file = await storageAdapter.getFile(fileId);
+          if (file) {
+            setFileName(file.name);
+            setRows(file.rows);
+            setColumns(file.columns);
+            setTotalFrames(file.totalFrames);
+            setLedFrames(file.frames);
+            setCurrentFrame(0);
+            setStartFrame(0);
+            setEndFrame(file.totalFrames - 1);
+          }
+        } catch (error) {
+          console.error('Failed to load file:', error);
+        }
+      } else {
+        // New file defaults
+        setFileName('Untitled');
+        setRows(8);
+        setColumns(16);
+        setTotalFrames(8);
+        setLedFrames(Array(8).fill(null).map(() =>
+          Array(8).fill(null).map(() => Array(16).fill('#000000'))
+        ));
         setCurrentFrame(0);
         setStartFrame(0);
-        setEndFrame(file.totalFrames - 1);
+        setEndFrame(7);
       }
-    } else {
-      // New file defaults
-      setFileName('Untitled');
-      setRows(8);
-      setColumns(16);
-      setTotalFrames(8);
-      setLedFrames(Array(8).fill(null).map(() =>
-        Array(8).fill(null).map(() => Array(16).fill('#000000'))
-      ));
-      setCurrentFrame(0);
-      setStartFrame(0);
-      setEndFrame(7);
-    }
+    };
+
+    loadFile();
   }, [fileId]);
 
   useEffect(() => {
@@ -179,20 +187,25 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     }
   }, [rows, columns, currentFrame, endFrame, startFrame]);
 
-  const handleSaveFile = () => {
+  const handleSaveFile = async () => {
     const fileData: LEDFile = {
-      id: fileId || fileStorage.generateId(),
+      id: fileId || storageAdapter.generateId(),
       name: fileName,
       frames: ledFrames,
       rows,
       columns,
       totalFrames,
-      createdAt: fileId ? fileStorage.getFile(fileId)?.createdAt || new Date().toISOString() : new Date().toISOString(),
+      createdAt: fileId ? (await storageAdapter.getFile(fileId))?.createdAt || new Date().toISOString() : new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
-    fileStorage.saveFile(fileData);
-    toast.success('File saved successfully!');
+    try {
+      await storageAdapter.saveFile(fileData);
+      toast.success('File saved successfully!');
+    } catch (error) {
+      console.error('Failed to save file:', error);
+      toast.error('Failed to save file');
+    }
   };
 
   const togglePanel = (panel: 'grid' | 'colors' | 'animation' | 'importexport') => {

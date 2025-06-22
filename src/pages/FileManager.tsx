@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,6 +7,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { FilePreview } from '@/components/FilePreview';
 import { fileStorage, type LEDFile } from '@/lib/file-storage';
 import { Plus, FilePen, Trash2, Palette } from 'lucide-react';
+import { storageAdapter } from '@/lib/storage-adapter';
 
 interface FileManagerProps {
   onOpenFile: (fileId: string) => void;
@@ -19,20 +19,29 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [newFileName, setNewFileName] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     loadFiles();
   }, []);
 
-  const loadFiles = () => {
-    setFiles(fileStorage.getAllFiles());
+  const loadFiles = async () => {
+    setIsLoading(true);
+    try {
+      const loadedFiles = await storageAdapter.getAllFiles();
+      setFiles(loadedFiles);
+    } catch (error) {
+      console.error('Failed to load files:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleCreateNew = () => {
+  const handleCreateNew = async () => {
     if (!newFileName.trim()) return;
     
     const newFile: LEDFile = {
-      id: fileStorage.generateId(),
+      id: storageAdapter.generateId(),
       name: newFileName.trim(),
       frames: [Array(8).fill(null).map(() => Array(16).fill('#000000'))],
       rows: 8,
@@ -42,19 +51,27 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
       updatedAt: new Date().toISOString()
     };
 
-    fileStorage.saveFile(newFile);
-    setNewFileName('');
-    setShowCreateDialog(false);
-    loadFiles();
-    onOpenFile(newFile.id);
+    try {
+      await storageAdapter.saveFile(newFile);
+      setNewFileName('');
+      setShowCreateDialog(false);
+      await loadFiles();
+      onOpenFile(newFile.id);
+    } catch (error) {
+      console.error('Failed to create file:', error);
+    }
   };
 
-  const handleDeleteFile = (fileId: string) => {
-    fileStorage.deleteFile(fileId);
-    if (selectedFile === fileId) {
-      setSelectedFile(null);
+  const handleDeleteFile = async (fileId: string) => {
+    try {
+      await storageAdapter.deleteFile(fileId);
+      if (selectedFile === fileId) {
+        setSelectedFile(null);
+      }
+      await loadFiles();
+    } catch (error) {
+      console.error('Failed to delete file:', error);
     }
-    loadFiles();
   };
 
   const selectedFileData = selectedFile ? files.find(f => f.id === selectedFile) : null;
@@ -112,7 +129,11 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
                 </AlertDialog>
               </div>
 
-              {files.length === 0 ? (
+              {isLoading ? (
+                <div className="text-center py-12 text-gray-400">
+                  <p>Loading files...</p>
+                </div>
+              ) : files.length === 0 ? (
                 <div className="text-center py-12 text-gray-400">
                   <Palette className="w-16 h-16 mx-auto mb-4 opacity-50" />
                   <p className="text-lg mb-2">No files yet</p>
