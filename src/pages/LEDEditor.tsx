@@ -9,6 +9,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { ArrowLeft, Save, ChevronDown, ChevronUp, Upload, AlertCircle, Download, FileImage } from 'lucide-react';
 import { fileStorage, type LEDFile } from '@/lib/file-storage';
 import { loadGif, loadPng, detectFileType, saveAsGif, saveAsPng, type FrameData } from '@/lib/image-utils';
@@ -63,6 +73,11 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [selectedPreset, setSelectedPreset] = useState('8×32');
 
+  // Unsaved changes tracking
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
+  const [lastSavedState, setLastSavedState] = useState<string>('');
+
   // Load file if fileId is provided
   useEffect(() => {
     const loadFile = async () => {
@@ -78,6 +93,17 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
             setCurrentFrame(0);
             setStartFrame(0);
             setEndFrame(file.totalFrames - 1);
+            
+            // Set initial saved state
+            const stateString = JSON.stringify({
+              name: file.name,
+              frames: file.frames,
+              rows: file.rows,
+              columns: file.columns,
+              totalFrames: file.totalFrames
+            });
+            setLastSavedState(stateString);
+            setHasUnsavedChanges(false);
           }
         } catch (error) {
           console.error('Failed to load file:', error);
@@ -94,11 +120,35 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
         setCurrentFrame(0);
         setStartFrame(0);
         setEndFrame(7);
+        
+        // Set initial saved state for new file
+        const stateString = JSON.stringify({
+          name: 'Untitled',
+          frames: Array(8).fill(null).map(() => Array(8).fill(null).map(() => Array(16).fill('#000000'))),
+          rows: 8,
+          columns: 16,
+          totalFrames: 8
+        });
+        setLastSavedState(stateString);
+        setHasUnsavedChanges(false);
       }
     };
 
     loadFile();
   }, [fileId]);
+
+  // Track changes to detect unsaved modifications
+  useEffect(() => {
+    const currentState = JSON.stringify({
+      name: fileName,
+      frames: ledFrames,
+      rows,
+      columns,
+      totalFrames
+    });
+
+    setHasUnsavedChanges(currentState !== lastSavedState);
+  }, [fileName, ledFrames, rows, columns, totalFrames, lastSavedState]);
 
   useEffect(() => {
     if (!isPlaying) return;
@@ -202,10 +252,40 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     try {
       await storageAdapter.saveFile(fileData);
       toast.success('File saved successfully!');
+      
+      // Update saved state
+      const stateString = JSON.stringify({
+        name: fileName,
+        frames: ledFrames,
+        rows,
+        columns,
+        totalFrames
+      });
+      setLastSavedState(stateString);
+      setHasUnsavedChanges(false);
     } catch (error) {
       console.error('Failed to save file:', error);
       toast.error('Failed to save file');
     }
+  };
+
+  const handleBackToFilesClick = () => {
+    if (hasUnsavedChanges) {
+      setShowExitDialog(true);
+    } else {
+      onBackToFiles();
+    }
+  };
+
+  const handleSaveAndExit = async () => {
+    await handleSaveFile();
+    setShowExitDialog(false);
+    onBackToFiles();
+  };
+
+  const handleDiscardAndExit = () => {
+    setShowExitDialog(false);
+    onBackToFiles();
   };
 
   const togglePanel = (panel: 'grid' | 'colors' | 'animation' | 'importexport') => {
@@ -358,7 +438,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
         <header className="text-center mb-8">
           <div className="flex items-center justify-between mb-4">
             <Button
-              onClick={onBackToFiles}
+              onClick={handleBackToFilesClick}
               variant="outline"
               className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
             >
@@ -371,10 +451,12 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
             >
               <Save className="w-4 h-4 mr-2" />
               Save
+              {hasUnsavedChanges && <span className="ml-1 text-yellow-300">*</span>}
             </Button>
           </div>
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
             {fileName}
+            {hasUnsavedChanges && <span className="text-yellow-300 ml-2">*</span>}
           </h1>
           <p className="text-gray-400">Design beautiful animated patterns for your LED matrix</p>
         </header>
@@ -577,6 +659,41 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
           </div>
         </div>
       </div>
+
+      {/* Exit Confirmation Dialog */}
+      <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
+        <AlertDialogContent className="bg-gray-800 border-gray-700 text-white">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertCircle className="w-5 h-5 text-yellow-500" />
+              Unsaved Changes
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-300">
+              You have unsaved changes that will be lost if you leave without saving. What would you like to do?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              onClick={() => setShowExitDialog(false)}
+              className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+            >
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDiscardAndExit}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Discard Changes
+            </AlertDialogAction>
+            <AlertDialogAction
+              onClick={handleSaveAndExit}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Save & Exit
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
