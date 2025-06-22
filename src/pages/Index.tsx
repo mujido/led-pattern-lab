@@ -4,7 +4,6 @@ import { RecentColors } from '@/components/RecentColors';
 import { LEDGrid } from '@/components/LEDGrid';
 import { GridControls } from '@/components/GridControls';
 import { AnimationControls } from '@/components/AnimationControls';
-import { GifControls } from '@/components/GifControls';
 import { Card } from '@/components/ui/card';
 
 const Index = () => {
@@ -176,15 +175,6 @@ const Index = () => {
                 onPlaybackSpeedChange={setPlaybackSpeed}
                 onStartFrameChange={setStartFrame}
                 onEndFrameChange={setEndFrame}
-              />
-            </Card>
-
-            <Card className="p-4 bg-gray-800 border-gray-700">
-              <h2 className="text-xl font-semibold mb-4">Export Tools</h2>
-              <GifControls
-                onSaveFrames={handleSaveFrames}
-                currentRows={rows}
-                currentColumns={columns}
               />
             </Card>
 
