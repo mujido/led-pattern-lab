@@ -24,7 +24,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
   const [fileName, setFileName] = useState('Untitled');
 
   // Single expanded panel state
-  const [expandedPanel, setExpandedPanel] = useState<'grid' | 'animation' | 'export' | 'colorPicker' | 'recentColors' | null>('grid');
+  const [expandedPanel, setExpandedPanel] = useState<'grid' | 'colors' | 'animation' | 'export' | null>('grid');
 
   // Animation state
   const [totalFrames, setTotalFrames] = useState(8);
@@ -177,7 +177,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     toast.success('File saved successfully!');
   };
 
-  const togglePanel = (panel: 'grid' | 'animation' | 'export' | 'colorPicker' | 'recentColors') => {
+  const togglePanel = (panel: 'grid' | 'colors' | 'animation' | 'export') => {
     setExpandedPanel(prev => prev === panel ? null : panel);
   };
 
@@ -187,7 +187,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     children 
   }: { 
     title: string; 
-    panelKey: 'grid' | 'animation' | 'export' | 'colorPicker' | 'recentColors'; 
+    panelKey: 'grid' | 'colors' | 'animation' | 'export'; 
     children: React.ReactNode;
   }) => {
     const isExpanded = expandedPanel === panelKey;
@@ -249,6 +249,22 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
               />
             </CollapsibleCard>
 
+            <CollapsibleCard title="Colors" panelKey="colors">
+              <div className="space-y-6">
+                <ColorPicker
+                  selectedColor={selectedColor}
+                  onColorChange={handleColorChange}
+                />
+                <div>
+                  <h3 className="text-sm font-medium text-gray-300 mb-3">Recent Colors</h3>
+                  <RecentColors
+                    colors={recentColors}
+                    onColorSelect={setSelectedColor}
+                  />
+                </div>
+              </div>
+            </CollapsibleCard>
+
             <CollapsibleCard title="Animation" panelKey="animation">
               <AnimationControls
                 totalFrames={totalFrames}
@@ -271,20 +287,6 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
                 onSaveFrames={handleSaveFrames}
                 currentRows={rows}
                 currentColumns={columns}
-              />
-            </CollapsibleCard>
-
-            <CollapsibleCard title="Color Picker" panelKey="colorPicker">
-              <ColorPicker
-                selectedColor={selectedColor}
-                onColorChange={handleColorChange}
-              />
-            </CollapsibleCard>
-
-            <CollapsibleCard title="Recent Colors" panelKey="recentColors">
-              <RecentColors
-                colors={recentColors}
-                onColorSelect={setSelectedColor}
               />
             </CollapsibleCard>
           </div>
