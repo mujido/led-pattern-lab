@@ -1,42 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { FilePreview } from '@/components/FilePreview';
 import { fileStorage, type LEDFile } from '@/lib/file-storage';
-import { loadGif, loadPng, detectFileType, type FrameData } from '@/lib/image-utils';
-import { Plus, FilePen, Trash2, Palette, Upload, AlertCircle, ChevronDown } from 'lucide-react';
+import { Plus, FilePen, Trash2, Palette } from 'lucide-react';
 
 interface FileManagerProps {
   onOpenFile: (fileId: string) => void;
   onCreateNew: () => void;
 }
 
-const presetResolutions = [
-  { label: '8×32', rows: 8, columns: 32 },
-  { label: '32×32', rows: 32, columns: 32 },
-  { label: '64×64', rows: 64, columns: 64 },
-  { label: 'Custom', rows: -1, columns: -1 }
-];
-
 export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNew }) => {
   const [files, setFiles] = useState<LEDFile[]>([]);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [newFileName, setNewFileName] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  
-  // Import state
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [useCumulative, setUseCumulative] = useState(true);
-  const [importRows, setImportRows] = useState(8);
-  const [importColumns, setImportColumns] = useState(32);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [selectedPreset, setSelectedPreset] = useState('8×32');
 
   useEffect(() => {
     loadFiles();
@@ -75,82 +57,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
     loadFiles();
   };
 
-  const handlePresetSelect = (preset: typeof presetResolutions[0]) => {
-    setSelectedPreset(preset.label);
-    setIsDropdownOpen(false);
-    
-    if (preset.label !== 'Custom') {
-      setImportRows(preset.rows);
-      setImportColumns(preset.columns);
-    }
-  };
-
-  const clamp = (value: number, min: number = 1, max: number = 64) => 
-    Math.min(max, Math.max(min, value));
-
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const fileType = detectFileType(file);
-
-      if (fileType === 'unknown') {
-        throw new Error('Unsupported file type. Please use GIF or PNG files.');
-      }
-
-      let frameData: FrameData[];
-
-      if (fileType === 'gif') {
-        const result = await loadGif(file, importColumns, importRows, useCumulative);
-        frameData = result.frames;
-      } else {
-        const result = await loadPng(file, importColumns, importRows);
-        frameData = result.frames;
-      }
-
-      if (frameData.length === 0) {
-        throw new Error('No frames found in the file.');
-      }
-
-      const frames: string[][][] = frameData.map(frame => frame.pixels);
-      const baseName = file.name.replace(/\.[^/.]+$/, '');
-
-      // Create new file from imported data
-      const newFile: LEDFile = {
-        id: fileStorage.generateId(),
-        name: baseName,
-        frames: frames,
-        rows: importRows,
-        columns: importColumns,
-        totalFrames: frames.length,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-
-      fileStorage.saveFile(newFile);
-      loadFiles();
-      onOpenFile(newFile.id);
-
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load file');
-    } finally {
-      setIsLoading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleLoadClick = () => {
-    fileInputRef.current?.click();
-  };
-
   const selectedFileData = selectedFile ? files.find(f => f.id === selectedFile) : null;
-  const isCustomSelected = selectedPreset === 'Custom';
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4">
@@ -168,143 +75,48 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
             <Card className="p-6 bg-gray-800 border-gray-700">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold">Your Files</h2>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleLoadClick}
-                    variant="outline"
-                    disabled={isLoading}
-                    className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600 disabled:opacity-50"
-                  >
-                    <Upload className="w-4 h-4 mr-2" />
-                    {isLoading ? 'Importing...' : 'Import GIF/PNG'}
-                  </Button>
-                  <AlertDialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-                    <AlertDialogTrigger asChild>
-                      <Button className="bg-blue-600 hover:bg-blue-700">
-                        <Plus className="w-4 h-4 mr-2" />
-                        New File
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="bg-gray-800 border-gray-700">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle className="text-white">Create New File</AlertDialogTitle>
-                        <AlertDialogDescription className="text-gray-300">
-                          Enter a name for your new LED pattern file.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <div className="my-4">
-                        <Label htmlFor="filename" className="text-gray-300">File Name</Label>
-                        <Input
-                          id="filename"
-                          value={newFileName}
-                          onChange={(e) => setNewFileName(e.target.value)}
-                          placeholder="My Pattern"
-                          className="bg-gray-700 border-gray-600 text-white mt-1"
-                          onKeyDown={(e) => e.key === 'Enter' && handleCreateNew()}
-                        />
-                      </div>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600">
-                          Cancel
-                        </AlertDialogCancel>
-                        <AlertDialogAction onClick={handleCreateNew} disabled={!newFileName.trim()}>
-                          Create
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-
-              {/* Import Settings */}
-              <div className="mb-4 p-4 bg-gray-700/50 rounded-lg">
-                <h3 className="text-sm font-semibold mb-3 text-gray-300">Import Settings</h3>
-                
-                <div className="mb-3">
-                  <Label className="text-xs text-gray-400 mb-2 block">Resolution</Label>
-                  <div className="relative">
-                    <Button
-                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                      variant="outline"
-                      className="w-full bg-gray-700 border-gray-600 text-white hover:bg-gray-600 justify-between text-sm"
-                    >
-                      {selectedPreset}
-                      <ChevronDown className="w-4 h-4" />
+                <AlertDialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                  <AlertDialogTrigger asChild>
+                    <Button className="bg-blue-600 hover:bg-blue-700">
+                      <Plus className="w-4 h-4 mr-2" />
+                      New File
                     </Button>
-                    
-                    {isDropdownOpen && (
-                      <div className="absolute top-full left-0 w-full mt-1 bg-gray-700 border border-gray-600 rounded-md shadow-lg z-50">
-                        {presetResolutions.map((preset) => (
-                          <button
-                            key={preset.label}
-                            onClick={() => handlePresetSelect(preset)}
-                            className="w-full px-3 py-2 text-left text-white hover:bg-gray-600 first:rounded-t-md last:rounded-b-md text-sm"
-                          >
-                            {preset.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {isCustomSelected && (
-                  <div className="grid grid-cols-2 gap-3 mb-3">
-                    <div>
-                      <Label htmlFor="import-rows" className="text-xs text-gray-400">Rows</Label>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="bg-gray-800 border-gray-700">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-white">Create New File</AlertDialogTitle>
+                      <AlertDialogDescription className="text-gray-300">
+                        Enter a name for your new LED pattern file.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="my-4">
+                      <Label htmlFor="filename" className="text-gray-300">File Name</Label>
                       <Input
-                        id="import-rows"
-                        type="number"
-                        min="1"
-                        max="64"
-                        value={importRows}
-                        onChange={(e) => setImportRows(clamp(parseInt(e.target.value) || 1))}
-                        className="bg-gray-700 border-gray-600 text-white text-sm mt-1"
+                        id="filename"
+                        value={newFileName}
+                        onChange={(e) => setNewFileName(e.target.value)}
+                        placeholder="My Pattern"
+                        className="bg-gray-700 border-gray-600 text-white mt-1"
+                        onKeyDown={(e) => e.key === 'Enter' && handleCreateNew()}
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="import-columns" className="text-xs text-gray-400">Columns</Label>
-                      <Input
-                        id="import-columns"
-                        type="number"
-                        min="1"
-                        max="64"
-                        value={importColumns}
-                        onChange={(e) => setImportColumns(clamp(parseInt(e.target.value) || 1))}
-                        className="bg-gray-700 border-gray-600 text-white text-sm mt-1"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div className="items-top flex space-x-2">
-                  <Checkbox id="cumulative" checked={useCumulative} onCheckedChange={(checked) => setUseCumulative(Boolean(checked))} />
-                  <div className="grid gap-1.5 leading-none">
-                    <label
-                      htmlFor="cumulative"
-                      className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-300"
-                    >
-                      GIF is optimized (layers frames)
-                    </label>
-                    <p className="text-xs text-gray-500">
-                      Uncheck if your GIF has ghosting or artifacts.
-                    </p>
-                  </div>
-                </div>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600">
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction onClick={handleCreateNew} disabled={!newFileName.trim()}>
+                        Create
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
-
-              {error && (
-                <div className="flex items-center gap-2 text-red-400 text-xs p-2 bg-red-900/20 border border-red-800 rounded mb-4">
-                  <AlertCircle className="w-4 h-4" />
-                  {error}
-                </div>
-              )}
 
               {files.length === 0 ? (
                 <div className="text-center py-12 text-gray-400">
                   <Palette className="w-16 h-16 mx-auto mb-4 opacity-50" />
                   <p className="text-lg mb-2">No files yet</p>
-                  <p>Create your first LED pattern or import a GIF/PNG to get started!</p>
+                  <p>Create your first LED pattern to get started!</p>
                 </div>
               ) : (
                 <div className="space-y-2">
@@ -339,14 +151,6 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
                   ))}
                 </div>
               )}
-
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".gif,.png"
-                onChange={handleFileUpload}
-                className="hidden"
-              />
             </Card>
           </div>
 

@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { ColorPicker } from '@/components/ColorPicker';
 import { RecentColors } from '@/components/RecentColors';
 import { LEDGrid } from '@/components/LEDGrid';
@@ -7,14 +7,25 @@ import { AnimationControls } from '@/components/AnimationControls';
 import { GifControls } from '@/components/GifControls';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save, ChevronDown, ChevronUp } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ArrowLeft, Save, ChevronDown, ChevronUp, Upload, AlertCircle } from 'lucide-react';
 import { fileStorage, type LEDFile } from '@/lib/file-storage';
+import { loadGif, loadPng, detectFileType, type FrameData } from '@/lib/image-utils';
 import { toast } from 'sonner';
 
 interface LEDEditorProps {
   fileId: string | null;
   onBackToFiles: () => void;
 }
+
+const presetResolutions = [
+  { label: '8×32', rows: 8, columns: 32 },
+  { label: '32×32', rows: 32, columns: 32 },
+  { label: '64×64', rows: 64, columns: 64 },
+  { label: 'Custom', rows: -1, columns: -1 }
+];
 
 const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
   const [selectedColor, setSelectedColor] = useState('#ff0000');
@@ -24,7 +35,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
   const [fileName, setFileName] = useState('Untitled');
 
   // Single expanded panel state
-  const [expandedPanel, setExpandedPanel] = useState<'grid' | 'colors' | 'animation' | 'export' | null>('grid');
+  const [expandedPanel, setExpandedPanel] = useState<'grid' | 'colors' | 'animation' | 'import' | 'export' | null>('grid');
 
   // Animation state
   const [totalFrames, setTotalFrames] = useState(8);
@@ -40,6 +51,16 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
       Array(8).fill(null).map(() => Array(16).fill('#000000'))
     )
   );
+
+  // Import state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
+  const [useCumulative, setUseCumulative] = useState(true);
+  const [importRows, setImportRows] = useState(8);
+  const [importColumns, setImportColumns] = useState(32);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [selectedPreset, setSelectedPreset] = useState('8×32');
 
   // Load file if fileId is provided
   useEffect(() => {
@@ -177,7 +198,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     toast.success('File saved successfully!');
   };
 
-  const togglePanel = (panel: 'grid' | 'colors' | 'animation' | 'export') => {
+  const togglePanel = (panel: 'grid' | 'colors' | 'animation' | 'import' | 'export') => {
     setExpandedPanel(prev => prev === panel ? null : panel);
   };
 
@@ -187,7 +208,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     children 
   }: { 
     title: string; 
-    panelKey: 'grid' | 'colors' | 'animation' | 'export'; 
+    panelKey: 'grid' | 'colors' | 'animation' | 'import' | 'export'; 
     children: React.ReactNode;
   }) => {
     const isExpanded = expandedPanel === panelKey;
@@ -209,6 +230,76 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
         )}
       </Card>
     );
+  };
+
+  const isCustomSelected = selectedPreset === 'Custom';
+
+  const handlePresetSelect = (preset: typeof presetResolutions[0]) => {
+    setSelectedPreset(preset.label);
+    setIsDropdownOpen(false);
+    
+    if (preset.label !== 'Custom') {
+      setImportRows(preset.rows);
+      setImportColumns(preset.columns);
+    }
+  };
+
+  const clamp = (value: number, min: number = 1, max: number = 64) => 
+    Math.min(max, Math.max(min, value));
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    setImportError(null);
+
+    try {
+      const fileType = detectFileType(file);
+
+      if (fileType === 'unknown') {
+        throw new Error('Unsupported file type. Please use GIF or PNG files.');
+      }
+
+      let frameData: FrameData[];
+
+      if (fileType === 'gif') {
+        const result = await loadGif(file, importColumns, importRows, useCumulative);
+        frameData = result.frames;
+      } else {
+        const result = await loadPng(file, importColumns, importRows);
+        frameData = result.frames;
+      }
+
+      if (frameData.length === 0) {
+        throw new Error('No frames found in the file.');
+      }
+
+      const frames: string[][][] = frameData.map(frame => frame.pixels);
+      
+      // Update current editor with imported data
+      setRows(importRows);
+      setColumns(importColumns);
+      setTotalFrames(frames.length);
+      setLedFrames(frames);
+      setCurrentFrame(0);
+      setStartFrame(0);
+      setEndFrame(frames.length - 1);
+
+      toast.success(`Imported ${frames.length} frame${frames.length !== 1 ? 's' : ''} successfully!`);
+
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Failed to load file');
+    } finally {
+      setIsImporting(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
   };
 
   return (
@@ -280,6 +371,115 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
                 onStartFrameChange={setStartFrame}
                 onEndFrameChange={setEndFrame}
               />
+            </CollapsibleCard>
+
+            <CollapsibleCard title="Import GIF/PNG" panelKey="import">
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm text-gray-300 mb-2 block">Import Animation</Label>
+                  <Button
+                    onClick={handleImportClick}
+                    variant="outline"
+                    disabled={isImporting}
+                    className="w-full bg-gray-700 border-gray-600 text-white hover:bg-gray-600 disabled:opacity-50"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    {isImporting ? 'Importing...' : 'Import GIF/PNG'}
+                  </Button>
+                </div>
+
+                <div>
+                  <Label className="text-xs text-gray-400 mb-2 block">Target Resolution</Label>
+                  <div className="relative">
+                    <Button
+                      onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                      variant="outline"
+                      className="w-full bg-gray-700 border-gray-600 text-white hover:bg-gray-600 justify-between text-sm"
+                    >
+                      {selectedPreset}
+                      <ChevronDown className="w-4 h-4" />
+                    </Button>
+                    
+                    {isDropdownOpen && (
+                      <div className="absolute top-full left-0 w-full mt-1 bg-gray-700 border border-gray-600 rounded-md shadow-lg z-50">
+                        {presetResolutions.map((preset) => (
+                          <button
+                            key={preset.label}
+                            onClick={() => handlePresetSelect(preset)}
+                            className="w-full px-3 py-2 text-left text-white hover:bg-gray-600 first:rounded-t-md last:rounded-b-md text-sm"
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {isCustomSelected && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="import-rows" className="text-xs text-gray-400">Rows</Label>
+                      <Input
+                        id="import-rows"
+                        type="number"
+                        min="1"
+                        max="64"
+                        value={importRows}
+                        onChange={(e) => setImportRows(clamp(parseInt(e.target.value) || 1))}
+                        className="bg-gray-700 border-gray-600 text-white text-sm mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="import-columns" className="text-xs text-gray-400">Columns</Label>
+                      <Input
+                        id="import-columns"
+                        type="number"
+                        min="1"
+                        max="64"
+                        value={importColumns}
+                        onChange={(e) => setImportColumns(clamp(parseInt(e.target.value) || 1))}
+                        className="bg-gray-700 border-gray-600 text-white text-sm mt-1"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="items-top flex space-x-2">
+                  <Checkbox id="cumulative" checked={useCumulative} onCheckedChange={(checked) => setUseCumulative(Boolean(checked))} />
+                  <div className="grid gap-1.5 leading-none">
+                    <label
+                      htmlFor="cumulative"
+                      className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-300"
+                    >
+                      GIF is optimized (layers frames)
+                    </label>
+                    <p className="text-xs text-gray-500">
+                      Uncheck if your GIF has ghosting or artifacts.
+                    </p>
+                  </div>
+                </div>
+
+                {importError && (
+                  <div className="flex items-center gap-2 text-red-400 text-xs p-2 bg-red-900/20 border border-red-800 rounded">
+                    <AlertCircle className="w-4 h-4" />
+                    {importError}
+                  </div>
+                )}
+
+                <div className="text-xs text-gray-400 p-2 bg-gray-800 rounded">
+                  <p className="mb-1">• Imports will replace current animation</p>
+                  <p>• Supports GIF and PNG files</p>
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".gif,.png"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </div>
             </CollapsibleCard>
 
             <CollapsibleCard title="Export Tools" panelKey="export">
