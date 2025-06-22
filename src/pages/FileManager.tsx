@@ -88,6 +88,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
           <div className="flex justify-center gap-4 mt-4">
             <Button 
               onClick={onOpenPlaylists}
+              className="btn-primary"
             >
               <List className="w-4 h-4 mr-2" />
               Manage Playlists
@@ -103,7 +104,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
                 <h2 className="text-xl font-semibold">Your Files</h2>
                 <AlertDialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                   <AlertDialogTrigger asChild>
-                    <Button>
+                    <Button className="btn-secondary">
                       <Plus className="w-4 h-4 mr-2" />
                       New File
                     </Button>
@@ -130,7 +131,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
                       <AlertDialogCancel className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600">
                         Cancel
                       </AlertDialogCancel>
-                      <AlertDialogAction onClick={handleCreateNew} disabled={!newFileName.trim()}>
+                      <AlertDialogAction onClick={handleCreateNew} disabled={!newFileName.trim()} className="btn-secondary">
                         Create
                       </AlertDialogAction>
                     </AlertDialogFooter>
@@ -206,7 +207,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
 
                   <Button
                     onClick={() => onOpenFile(selectedFileData.id)}
-                    className="w-full"
+                    className="w-full btn-primary"
                   >
                     <FilePen className="w-4 h-4 mr-2" />
                     Open File
@@ -216,7 +217,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="outline"
-                        className="w-full bg-red-900/20 border-red-800 text-red-400 hover:bg-red-900/40"
+                        className="w-full btn-danger border-red-800"
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Delete File
@@ -235,7 +236,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
                         </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => handleDeleteFile(selectedFileData.id)}
-                          className="bg-red-600 hover:bg-red-700"
+                          className="btn-danger"
                         >
                           Delete
                         </AlertDialogAction>
