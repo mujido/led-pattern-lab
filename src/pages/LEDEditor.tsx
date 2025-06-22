@@ -440,14 +440,14 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
             <Button
               onClick={handleBackToFilesClick}
               variant="outline"
-              className="bg-gray-800 border-gray-600 text-white hover:bg-gray-700"
+              className="btn-secondary border-blue-600"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Files
             </Button>
             <Button
               onClick={handleSaveFile}
-              className="bg-green-600 hover:bg-green-700"
+              className="btn-primary"
             >
               <Save className="w-4 h-4 mr-2" />
               Save
