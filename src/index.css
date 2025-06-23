@@ -108,12 +108,8 @@
   .btn-primary {
     @apply bg-purple-600 text-white hover:bg-purple-700 focus:ring-purple-500;
   }
-  
+
   .btn-secondary {
     @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
-  }
-  
-  .btn-danger {
-    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
   }
 }

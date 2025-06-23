@@ -263,8 +263,8 @@ export const FileManager: React.FC = () => {
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button
-                        variant="outline"
-                        className="w-full btn-danger border-red-800"
+                        variant="destructive"
+                        className="w-full btn-danger"
                       >
                         <Trash2 className="w-4 h-4 mr-2" />
                         Delete File

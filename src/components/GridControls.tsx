@@ -1,10 +1,9 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Palette, ChevronDown } from 'lucide-react';
+import { Eraser, ChevronDown } from 'lucide-react';
 
 interface GridControlsProps {
   rows: number;
@@ -47,7 +46,7 @@ export const GridControls: React.FC<GridControlsProps> = ({
   const handlePresetSelect = (preset: typeof presetResolutions[0]) => {
     setSelectedPreset(preset.label);
     setIsDropdownOpen(false);
-    
+
     if (preset.label !== 'Custom') {
       onGridSizeChange(preset.rows, preset.columns);
     }
@@ -68,7 +67,7 @@ export const GridControls: React.FC<GridControlsProps> = ({
             {selectedPreset}
             <ChevronDown className="w-4 h-4" />
           </Button>
-          
+
           {isDropdownOpen && (
             <div className="absolute top-full left-0 w-full mt-1 bg-gray-700 border border-gray-600 rounded-md shadow-lg z-50">
               {presetResolutions.map((preset) => (
@@ -119,10 +118,10 @@ export const GridControls: React.FC<GridControlsProps> = ({
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button
-            variant="outline"
-            className="w-full bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
+            variant="default"
+            className="w-full"
           >
-            <Palette className="w-4 h-4 mr-2" />
+            <Eraser className="w-4 h-4 mr-2" />
             Clear Grid
           </Button>
         </AlertDialogTrigger>

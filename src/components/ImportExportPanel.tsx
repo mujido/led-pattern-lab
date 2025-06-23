@@ -137,9 +137,9 @@ export const ImportExportPanel: React.FC<ImportExportPanelProps> = ({
         <Label className="text-sm text-gray-300 mb-2 block">Import Animation</Label>
         <Button
           onClick={handleImportClick}
-          variant="outline"
+          variant="default"
           disabled={isImporting || !librariesLoaded}
-          className="w-full bg-gray-700 border-gray-600 text-white hover:bg-gray-600 disabled:opacity-50"
+          className="w-full"
         >
           <Upload className="w-4 h-4 mr-2" />
           {!librariesLoaded ? 'Loading...' : isImporting ? 'Importing...' : 'Import GIF'}
@@ -169,9 +169,9 @@ export const ImportExportPanel: React.FC<ImportExportPanelProps> = ({
         <Label className="text-sm text-gray-300 mb-2 block">Export Animation</Label>
         <Button
           onClick={handleSaveAsGif}
-          variant="outline"
+          variant="default"
           disabled={isExporting || !librariesLoaded}
-          className="w-full bg-gray-700 border-gray-600 text-white hover:bg-gray-600 disabled:opacity-50"
+          className="w-full"
         >
           <Download className="w-4 h-4 mr-2" />
           {!librariesLoaded ? 'Loading...' : isExporting ? 'Exporting...' : 'Save GIF'}

@@ -80,8 +80,7 @@ export const StorageUsageIndicator: React.FC<StorageUsageIndicatorProps> = ({
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-gray-300">
               Storage Usage
-              {esp32Stats && <span className="text-xs text-blue-400 ml-2">(ESP32)</span>}
-              {!esp32Stats && <span className="text-xs text-gray-500 ml-2">(Local)</span>}
+              <span className="text-xs ml-2 text-purple-400">({esp32Stats ? "ESP32" : "Local"})</span>
             </span>
             <span className="text-xs text-gray-400">
               {loading ? 'Loading...' : `${formatBytes(usedBytes)} / ${formatBytes(totalBytes)}`}

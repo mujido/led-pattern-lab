@@ -21,7 +21,6 @@ export const EditorHeader: React.FC<EditorHeaderProps> = ({
       <div className="flex items-center justify-between mb-4">
         <Button
           onClick={onBackToFiles}
-          variant="secondary"
           className="border-blue-600"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
