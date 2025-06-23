@@ -25,7 +25,7 @@ const shouldUseRestApi = () => {
     return false;
   }
 
-  // In development mode with ESP32 URL, try REST API for ESP32 communication
+  // In development mode with ESP32 URL, try REST API for ESP32 communication (hybrid mode)
   if (import.meta.env.DEV && import.meta.env.VITE_ESP32_REST_URL) {
     console.log('🔍 Debug: Running in hybrid mode - attempting ESP32 connection');
     return true;
@@ -85,16 +85,23 @@ class HybridStorageAdapter {
         console.error('❌ Failed to create file via REST API:', error);
         throw new Error('Failed to create file on ESP32: ' + (error instanceof Error ? error.message : String(error)));
       }
-      // Also save locally for backup/caching
-      this.localStorage.setItem(`${file.name}`, JSON.stringify(file));
     } else {
       // Check if file exists in local storage
       const existingFile = this.localStorage.getItem(`${file.name}`);
       if (existingFile) {
         throw new Error('File already exists');
       }
+
       // Create new file in local storage
-      this.localStorage.setItem(`${file.name}`, JSON.stringify(file));
+      try {
+        this.localStorage.setItem(`${file.name}`, JSON.stringify(file));
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+          console.error('❌ localStorage quota exceeded. Please free up some space or use ESP32 mode.');
+          throw new Error('Storage quota exceeded. Please delete some files or use ESP32 mode for larger storage.');
+        }
+        throw error;
+      }
     }
   }
 
@@ -112,11 +119,17 @@ class HybridStorageAdapter {
         console.error('❌ Failed to save via REST API:', error);
         throw new Error('Failed to save file to ESP32: ' + (error instanceof Error ? error.message : String(error)));
       }
-      // Also save locally for backup/caching
-      this.localStorage.setItem(`${file.name}`, JSON.stringify(file));
     } else {
       // Use local storage
-      this.localStorage.setItem(`${file.name}`, JSON.stringify(file));
+      try {
+        this.localStorage.setItem(`${file.name}`, JSON.stringify(file));
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'QuotaExceededError') {
+          console.error('❌ localStorage quota exceeded. Please free up some space or use ESP32 mode.');
+          throw new Error('Storage quota exceeded. Please delete some files or use ESP32 mode for larger storage.');
+        }
+        throw error;
+      }
     }
   }
 
@@ -130,10 +143,6 @@ class HybridStorageAdapter {
       // Request from ESP32 via REST API
       try {
         const file = await this.restStorage.requestFile(name);
-        if (file) {
-          // Also save locally for backup/caching
-          this.localStorage.setItem(`${name}`, JSON.stringify(file));
-        }
         return file;
       } catch (error) {
         console.error('❌ Failed to request file via REST API:', error);
@@ -156,10 +165,6 @@ class HybridStorageAdapter {
       // Request from ESP32 via REST API
       try {
         const files = await this.restStorage.requestAllFiles();
-        // Also save locally for backup/caching
-        files.forEach(file => {
-          this.localStorage.setItem(`${file.name}`, JSON.stringify(file));
-        });
         return files;
       } catch (error) {
         console.error('❌ REST API request failed:', error);
@@ -194,9 +199,10 @@ class HybridStorageAdapter {
     if (this.isRestApiMode && this.restStorage) {
       // Send delete request to ESP32
       this.restStorage.deleteFile(name);
+    } else {
+      // Delete from local storage
+      this.localStorage.removeItem(`${name}`);
     }
-    // Always delete from local storage
-    this.localStorage.removeItem(`${name}`);
   }
 
   // Playlist methods (similar pattern)
@@ -255,6 +261,31 @@ class HybridStorageAdapter {
     this.isRestApiMode = enabled;
     if (enabled && !this.restStorage) {
       this.connectionPromise = this.initRestApi();
+    }
+  }
+
+  // Get SPIFFS storage stats
+  async getStorageStats(): Promise<{
+    totalBytes: number;
+    usedBytes: number;
+    freeBytes: number;
+    usagePercentage: number;
+  } | null> {
+    if (this.isRestApiMode && this.restStorage) {
+      // Wait for connection to be established
+      if (this.connectionPromise) {
+        await this.connectionPromise;
+      }
+
+      try {
+        return await this.restStorage.getSPIFFSStats();
+      } catch (error) {
+        console.error('❌ Failed to get SPIFFS stats:', error);
+        return null;
+      }
+    } else {
+      // In local storage mode, return null to indicate no ESP32 stats available
+      return null;
     }
   }
 }

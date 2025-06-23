@@ -458,7 +458,7 @@ export class RestStorage {
     }
   }
 
-  async requestAllPlaylists(): Promise<void> {
+  async requestAllPlaylists(): Promise<any[]> {
     if (!this.isConnected) {
       throw new Error('Not connected to REST API');
     }
@@ -474,9 +474,9 @@ export class RestStorage {
       }
 
       const playlists = await response.json();
-      console.log('✅ All playlists retrieved via REST API:', playlists);
+      return Array.isArray(playlists) ? playlists : [];
     } catch (error) {
-      console.error('❌ Failed to get all playlists via REST API:', error);
+      console.error('❌ Failed to get playlists via REST API:', error);
       throw error;
     }
   }
@@ -606,6 +606,39 @@ export class RestStorage {
       };
       console.log('🔍 Using fallback metadata:', fallback);
       return fallback;
+    }
+  }
+
+  async getSPIFFSStats(): Promise<{
+    totalBytes: number;
+    usedBytes: number;
+    freeBytes: number;
+    usagePercentage: number;
+  }> {
+    if (!this.isConnected) {
+      throw new Error('Not connected to REST API');
+    }
+
+    try {
+      const response = await fetch(`${this.config.baseUrl}/api/spiffs-stats`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(this.config.timeout || 30000)
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const stats = await response.json();
+      return {
+        totalBytes: stats.totalBytes || 0,
+        usedBytes: stats.usedBytes || 0,
+        freeBytes: stats.freeBytes || 0,
+        usagePercentage: stats.usagePercentage || 0
+      };
+    } catch (error) {
+      console.error('❌ Failed to get SPIFFS stats via REST API:', error);
+      throw error;
     }
   }
 }
