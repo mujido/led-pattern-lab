@@ -9,7 +9,7 @@ import { visualizer } from 'rollup-plugin-visualizer';
 export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
-    port: 5173, // Changed to standard Vite dev port
+    port: 8080, // Changed to port 8080 for Lovable compatibility
     cors: true, // Enable CORS for ESP32 WebSocket connection
   },
   base: mode === 'development' ? '/' : './', // Use absolute paths in dev, relative in production
