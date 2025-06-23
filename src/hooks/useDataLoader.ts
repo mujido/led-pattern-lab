@@ -6,10 +6,16 @@ interface DataLoaderState<T> {
   error: string | null;
 }
 
+interface UseDataLoaderOptions {
+  refreshOnFocus?: boolean;
+}
+
 export function useDataLoader<T>(
   loader: () => Promise<T>,
-  dependencies: any[] = []
+  dependencies: any[] = [],
+  options: UseDataLoaderOptions = {}
 ): DataLoaderState<T> & { refetch: () => Promise<void> } {
+  const { refreshOnFocus = false } = options;
   const [state, setState] = useState<DataLoaderState<T>>({
     data: null,
     loading: true,
@@ -34,6 +40,19 @@ export function useDataLoader<T>(
   useEffect(() => {
     loadData();
   }, dependencies);
+
+  // Add focus-based refresh
+  useEffect(() => {
+    if (!refreshOnFocus) return;
+
+    const handleFocus = () => {
+      console.log('🔄 Window focused, refreshing data...');
+      refetch();
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [refreshOnFocus, refetch]);
 
   return { ...state, refetch };
 }

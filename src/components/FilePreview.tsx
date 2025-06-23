@@ -19,15 +19,23 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
 }) => {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [thumbnailError, setThumbnailError] = useState(false);
+  const [thumbnailKey, setThumbnailKey] = useState(0); // Force re-render
 
   // Try to load thumbnail if filename and baseUrl are provided
   useEffect(() => {
-    if (fileName && baseUrl && !thumbnailError) {
+    if (fileName && baseUrl) {
+      // Reset error state when fileName changes
+      setThumbnailError(false);
+
+      // Create URL without cache-busting parameter to avoid CORS preflight
       const url = `${baseUrl}/api/led-files/${encodeURIComponent(fileName)}.thumb`;
       console.log('🔍 Debug: Loading thumbnail from:', url);
       setThumbnailUrl(url);
+
+      // Force re-render by updating key
+      setThumbnailKey(prev => prev + 1);
     }
-  }, [fileName, baseUrl, thumbnailError]);
+  }, [fileName, baseUrl]); // Removed thumbnailError from dependencies
 
   // Fallback to LED grid preview
   const renderGridPreview = () => {
@@ -69,6 +77,7 @@ export const FilePreview: React.FC<FilePreviewProps> = ({
     return (
       <div className={`${className}`}>
         <img
+          key={thumbnailKey} // Force re-render when key changes
           src={thumbnailUrl}
           alt={`Preview of ${fileName}`}
           className="rounded border border-gray-500"

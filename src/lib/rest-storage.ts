@@ -154,12 +154,17 @@ export class RestStorage {
       const gifBlob = await this.convertFileToGif(file);
       const thumbnailBlob = await this.generateThumbnail(file);
 
-      // Parse GIF metadata
-      const metadata = await this.parseGifMetadata(gifBlob);
+      // Use the actual grid dimensions from the file, not the GIF metadata
+      // This ensures the metadata reflects what the user actually set
+      const metadata = {
+        width: file.columns,
+        height: file.rows,
+        frameCount: file.totalFrames
+      };
 
       console.log(`📤 Creating GIF file: ${file.name} (${gifBlob.size} bytes)`);
       console.log(`📤 Creating thumbnail: ${file.name} (${thumbnailBlob.size} bytes)`);
-      console.log(`📊 GIF metadata: ${metadata.width}x${metadata.height}, ${metadata.frameCount} frames`);
+      console.log(`📊 Using grid dimensions: ${metadata.width}x${metadata.height}, ${metadata.frameCount} frames`);
 
       // Upload GIF file with metadata headers
       const gifResponse = await fetch(`${this.config.baseUrl}/api/led-files/${encodeURIComponent(file.name)}.gif`, {
@@ -212,22 +217,31 @@ export class RestStorage {
       const gifBlob = await this.convertFileToGif(file);
       const thumbnailBlob = await this.generateThumbnail(file);
 
-      // Parse GIF metadata
-      const metadata = await this.parseGifMetadata(gifBlob);
+      // Use the actual grid dimensions from the file, not the GIF metadata
+      // This ensures the metadata reflects what the user actually set
+      const metadata = {
+        width: file.columns,
+        height: file.rows,
+        frameCount: file.totalFrames
+      };
 
       console.log(`📤 Saving GIF file: ${file.name} (${gifBlob.size} bytes)`);
       console.log(`📤 Saving thumbnail: ${file.name} (${thumbnailBlob.size} bytes)`);
-      console.log(`📊 GIF metadata: ${metadata.width}x${metadata.height}, ${metadata.frameCount} frames`);
+      console.log(`📊 Using grid dimensions: ${metadata.width}x${metadata.height}, ${metadata.frameCount} frames`);
 
       // Upload GIF file with metadata headers
+      const headers = {
+        'Content-Type': 'image/gif',
+        'X-GIF-Width': metadata.width.toString(),
+        'X-GIF-Height': metadata.height.toString(),
+        'X-GIF-Frames': metadata.frameCount.toString(),
+      };
+
+      console.log('📤 Sending headers:', headers);
+
       const gifResponse = await fetch(`${this.config.baseUrl}/api/led-files/${encodeURIComponent(file.name)}.gif`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'image/gif',
-          'X-GIF-Width': metadata.width.toString(),
-          'X-GIF-Height': metadata.height.toString(),
-          'X-GIF-Frames': metadata.frameCount.toString(),
-        },
+        headers,
         body: gifBlob,
         signal: AbortSignal.timeout(calculateTimeout(gifBlob.size))
       });
@@ -555,12 +569,16 @@ export class RestStorage {
     }
 
     try {
+      console.log('🔍 Parsing GIF metadata from blob:', gifBlob.size, 'bytes');
+
       // Use gif-frames to get metadata
       const frames = await (window as any).gifFrames({
         url: URL.createObjectURL(gifBlob),
         frames: 'all',
         outputType: 'canvas'
       });
+
+      console.log('🔍 Extracted frames:', frames.length);
 
       if (frames.length === 0) {
         throw new Error('No frames found in GIF');
@@ -570,19 +588,24 @@ export class RestStorage {
       const firstFrame = frames[0];
       const canvas = firstFrame.getImage();
 
-      return {
+      const metadata = {
         width: canvas.width,
         height: canvas.height,
         frameCount: frames.length
       };
+
+      console.log('🔍 Parsed GIF metadata:', metadata);
+      return metadata;
     } catch (error) {
-      console.error('Failed to parse GIF metadata:', error);
+      console.error('❌ Failed to parse GIF metadata:', error);
       // Fallback to default values
-      return {
+      const fallback = {
         width: 8,
         height: 8,
         frameCount: 1
       };
+      console.log('🔍 Using fallback metadata:', fallback);
+      return fallback;
     }
   }
 }
