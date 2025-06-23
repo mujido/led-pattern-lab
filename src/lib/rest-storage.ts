@@ -1,12 +1,10 @@
 import { LEDFile } from './file-storage';
+import { FrameData } from './image-utils';
 
 interface RestStorageConfig {
   baseUrl: string;
   timeout?: number;
 }
-
-// Binary format constants - match ESP32 format
-const BINARY_VERSION = 1;
 
 // Calculate timeout based on file size (SPIFFS writes are slow)
 function calculateTimeout(fileSize: number): number {
@@ -53,87 +51,97 @@ export class RestStorage {
     return this.isConnected;
   }
 
-  // Convert LED file to binary format matching ESP32 format
-  private convertFileToBinary(file: LEDFile): ArrayBuffer {
-    const headerSize = 12; // 1+1+1+1+4+4 (version+rows+columns+total_frames+created+updated)
-    const frameDataSize = file.rows * file.columns * file.totalFrames * 3; // RGB per LED (3 bytes)
-    const totalSize = headerSize + frameDataSize;
+  // Convert LED file to GIF format for storage
+  private async convertFileToGif(file: LEDFile): Promise<Blob> {
+    const frameData: FrameData[] = file.frames.map(frame => ({
+      width: file.columns,
+      height: file.rows,
+      pixels: frame
+    }));
 
-    const buffer = new ArrayBuffer(totalSize);
-    const view = new DataView(buffer);
-    let offset = 0;
+    // Create a temporary canvas to generate GIF
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
 
-    // Write header (matching ESP32 led_file_header_t)
-    view.setUint8(offset, BINARY_VERSION); offset += 1;
-    view.setUint8(offset, file.rows); offset += 1;
-    view.setUint8(offset, file.columns); offset += 1;
-    view.setUint8(offset, file.totalFrames); offset += 1;
-    view.setUint32(offset, Math.floor(Date.parse(file.createdAt) / 1000), false); offset += 4;
-    view.setUint32(offset, Math.floor(Date.parse(file.updatedAt) / 1000), false); offset += 4;
+    // Use gif.js to create the GIF
+    const gif = new (window as any).GIF({
+      workers: 2,
+      quality: 1, // Best quality (1-30, where 1 is best)
+      width: file.columns, // 1:1 mapping - no scaling
+      height: file.rows,
+      workerScript: '/gif.worker.js',
+      transparent: null, // No transparency
+      background: '#000000' // Black background
+    });
 
-    // Write frame data as RGB bytes
-    for (const frame of file.frames) {
-      for (const row of frame) {
-        for (const color of row) {
-          // Convert "#RRGGBB" to RGB bytes
-          const hex = color.replace('#', '');
-          const r = parseInt(hex.substr(0, 2), 16);
-          const g = parseInt(hex.substr(2, 2), 16);
-          const b = parseInt(hex.substr(4, 2), 16);
-          view.setUint8(offset, r); offset += 1;
-          view.setUint8(offset, g); offset += 1;
-          view.setUint8(offset, b); offset += 1;
+    // Add frames to GIF
+    frameData.forEach(frame => {
+      const frameCanvas = document.createElement('canvas');
+      const frameCtx = frameCanvas.getContext('2d')!;
+      frameCanvas.width = file.columns;
+      frameCanvas.height = file.rows;
+
+      // Draw frame data
+      for (let row = 0; row < file.rows; row++) {
+        for (let col = 0; col < file.columns; col++) {
+          const color = frame.pixels[row][col];
+          frameCtx.fillStyle = color;
+          frameCtx.fillRect(col, row, 1, 1);
         }
       }
-    }
 
-    return buffer;
+      gif.addFrame(frameCanvas, { delay: 100 });
+    });
+
+    return new Promise((resolve, reject) => {
+      gif.on('finished', (blob: Blob) => resolve(blob));
+      gif.on('error', reject);
+      gif.render();
+    });
   }
 
-  // Convert binary format back to LED file (matching ESP32 format)
-  private convertBinaryToFile(buffer: ArrayBuffer): LEDFile {
-    const view = new DataView(buffer);
-    let offset = 0;
+  // Generate thumbnail from LED file
+  private async generateThumbnail(file: LEDFile): Promise<Blob> {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d')!;
 
-    // Read header (matching ESP32 led_file_header_t)
-    const version = view.getUint8(offset); offset += 1;
-    if (version !== BINARY_VERSION) {
-      throw new Error('Unsupported binary version');
-    }
+    // Create a small thumbnail (64x64 pixels)
+    const thumbnailSize = 64;
+    canvas.width = thumbnailSize;
+    canvas.height = thumbnailSize;
 
-    const rows = view.getUint8(offset); offset += 1;
-    const columns = view.getUint8(offset); offset += 1;
-    const totalFrames = view.getUint8(offset); offset += 1;
-    const createdAt = view.getUint32(offset, false); offset += 4;
-    const updatedAt = view.getUint32(offset, false); offset += 4;
+    // Use first frame for thumbnail
+    const firstFrame = file.frames[0] || [];
 
-    // Read frame data as RGB bytes
-    const frames: string[][][] = [];
-    for (let f = 0; f < totalFrames; f++) {
-      const frame: string[][] = [];
-      for (let r = 0; r < rows; r++) {
-        const row: string[] = [];
-        for (let c = 0; c < columns; c++) {
-          const r_val = view.getUint8(offset); offset += 1;
-          const g_val = view.getUint8(offset); offset += 1;
-          const b_val = view.getUint8(offset); offset += 1;
-          const hex = `#${r_val.toString(16).padStart(2, '0')}${g_val.toString(16).padStart(2, '0')}${b_val.toString(16).padStart(2, '0')}`;
-          row.push(hex);
-        }
-        frame.push(row);
+    // Calculate scaling
+    const scaleX = thumbnailSize / file.columns;
+    const scaleY = thumbnailSize / file.rows;
+    const scale = Math.min(scaleX, scaleY);
+
+    const scaledWidth = file.columns * scale;
+    const scaledHeight = file.rows * scale;
+    const offsetX = (thumbnailSize - scaledWidth) / 2;
+    const offsetY = (thumbnailSize - scaledHeight) / 2;
+
+    // Draw first frame
+    for (let row = 0; row < file.rows; row++) {
+      for (let col = 0; col < file.columns; col++) {
+        const color = firstFrame[row]?.[col] || '#000000';
+        ctx.fillStyle = color;
+        ctx.fillRect(
+          offsetX + col * scale,
+          offsetY + row * scale,
+          scale,
+          scale
+        );
       }
-      frames.push(frame);
     }
 
-    return {
-      name: 'unknown', // Will be set by caller
-      rows,
-      columns,
-      totalFrames,
-      frames,
-      createdAt: new Date(createdAt * 1000).toISOString(),
-      updatedAt: new Date(updatedAt * 1000).toISOString()
-    };
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        resolve(blob!);
+      }, 'image/png');
+    });
   }
 
   async createFile(file: LEDFile): Promise<void> {
@@ -142,27 +150,52 @@ export class RestStorage {
     }
 
     try {
-      const binaryFile = this.convertFileToBinary(file);
-      const timeout = calculateTimeout(binaryFile.byteLength);
-      console.log(`📤 Creating file: ${file.name} (${binaryFile.byteLength} bytes, timeout: ${timeout}ms)`);
+      // Generate GIF and thumbnail
+      const gifBlob = await this.convertFileToGif(file);
+      const thumbnailBlob = await this.generateThumbnail(file);
 
-      const response = await fetch(`${this.config.baseUrl}/api/led-files/${encodeURIComponent(file.name)}`, {
+      // Parse GIF metadata
+      const metadata = await this.parseGifMetadata(gifBlob);
+
+      console.log(`📤 Creating GIF file: ${file.name} (${gifBlob.size} bytes)`);
+      console.log(`📤 Creating thumbnail: ${file.name} (${thumbnailBlob.size} bytes)`);
+      console.log(`📊 GIF metadata: ${metadata.width}x${metadata.height}, ${metadata.frameCount} frames`);
+
+      // Upload GIF file with metadata headers
+      const gifResponse = await fetch(`${this.config.baseUrl}/api/led-files/${encodeURIComponent(file.name)}.gif`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/octet-stream',
+          'Content-Type': 'image/gif',
+          'X-GIF-Width': metadata.width.toString(),
+          'X-GIF-Height': metadata.height.toString(),
+          'X-GIF-Frames': metadata.frameCount.toString(),
         },
-        body: binaryFile,
-        signal: AbortSignal.timeout(timeout)
+        body: gifBlob,
+        signal: AbortSignal.timeout(calculateTimeout(gifBlob.size))
       });
 
-      if (!response.ok) {
-        if (response.status === 409) {
+      if (!gifResponse.ok) {
+        if (gifResponse.status === 409) {
           throw new Error('File already exists');
         }
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        throw new Error(`HTTP ${gifResponse.status}: ${gifResponse.statusText}`);
       }
 
-      console.log('✅ File created via REST API (binary format)');
+      // Upload thumbnail
+      const thumbResponse = await fetch(`${this.config.baseUrl}/api/led-files/${encodeURIComponent(file.name)}.thumb`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'image/png',
+        },
+        body: thumbnailBlob,
+        signal: AbortSignal.timeout(calculateTimeout(thumbnailBlob.size))
+      });
+
+      if (!thumbResponse.ok) {
+        console.warn('Failed to upload thumbnail, but GIF was saved successfully');
+      }
+
+      console.log('✅ File created via REST API (GIF format with thumbnail)');
     } catch (error) {
       console.error('❌ Failed to create file via REST API:', error);
       throw error;
@@ -175,24 +208,49 @@ export class RestStorage {
     }
 
     try {
-      const binaryFile = this.convertFileToBinary(file);
-      const timeout = calculateTimeout(binaryFile.byteLength);
-      console.log(`📤 Saving file: ${file.name} (${binaryFile.byteLength} bytes, timeout: ${timeout}ms)`);
+      // Generate GIF and thumbnail
+      const gifBlob = await this.convertFileToGif(file);
+      const thumbnailBlob = await this.generateThumbnail(file);
 
-      const response = await fetch(`${this.config.baseUrl}/api/led-files/${encodeURIComponent(file.name)}`, {
+      // Parse GIF metadata
+      const metadata = await this.parseGifMetadata(gifBlob);
+
+      console.log(`📤 Saving GIF file: ${file.name} (${gifBlob.size} bytes)`);
+      console.log(`📤 Saving thumbnail: ${file.name} (${thumbnailBlob.size} bytes)`);
+      console.log(`📊 GIF metadata: ${metadata.width}x${metadata.height}, ${metadata.frameCount} frames`);
+
+      // Upload GIF file with metadata headers
+      const gifResponse = await fetch(`${this.config.baseUrl}/api/led-files/${encodeURIComponent(file.name)}.gif`, {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/octet-stream',
+          'Content-Type': 'image/gif',
+          'X-GIF-Width': metadata.width.toString(),
+          'X-GIF-Height': metadata.height.toString(),
+          'X-GIF-Frames': metadata.frameCount.toString(),
         },
-        body: binaryFile,
-        signal: AbortSignal.timeout(timeout)
+        body: gifBlob,
+        signal: AbortSignal.timeout(calculateTimeout(gifBlob.size))
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (!gifResponse.ok) {
+        throw new Error(`HTTP ${gifResponse.status}: ${gifResponse.statusText}`);
       }
 
-      console.log('✅ File saved via REST API (binary format)');
+      // Upload thumbnail
+      const thumbResponse = await fetch(`${this.config.baseUrl}/api/led-files/${encodeURIComponent(file.name)}.thumb`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'image/png',
+        },
+        body: thumbnailBlob,
+        signal: AbortSignal.timeout(calculateTimeout(thumbnailBlob.size))
+      });
+
+      if (!thumbResponse.ok) {
+        console.warn('Failed to upload thumbnail, but GIF was saved successfully');
+      }
+
+      console.log('✅ File saved via REST API (GIF format with thumbnail)');
     } catch (error) {
       console.error('❌ Failed to save file via REST API:', error);
       throw error;
@@ -205,19 +263,60 @@ export class RestStorage {
     }
 
     try {
-      const response = await fetch(`${this.config.baseUrl}/api/led-files/${encodeURIComponent(name)}`, {
+      // First get metadata from the file listing
+      const metadataResponse = await fetch(`${this.config.baseUrl}/api/led-files`, {
         method: 'GET',
         signal: AbortSignal.timeout(this.config.timeout || 30000)
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      if (!metadataResponse.ok) {
+        throw new Error(`HTTP ${metadataResponse.status}: ${metadataResponse.statusText}`);
       }
 
-      const binaryFile = await response.arrayBuffer();
-      const file = this.convertBinaryToFile(binaryFile);
-      file.name = name; // Set the correct name
-      console.log('✅ File retrieved via REST API (binary format):', file);
+      const filesMetadata = await metadataResponse.json();
+
+      if (!Array.isArray(filesMetadata)) {
+        console.warn('⚠️ ESP32 returned non-array response');
+        return null;
+      }
+
+      // Find the file with matching name
+      const fileMetadata = filesMetadata.find((file: any) => file.name === name);
+      if (!fileMetadata) {
+        console.warn(`⚠️ File ${name} not found in metadata`);
+        return null;
+      }
+
+      // Now load the actual GIF file
+      const gifResponse = await fetch(`${this.config.baseUrl}/api/led-files/${encodeURIComponent(name)}.gif`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(this.config.timeout || 30000)
+      });
+
+      if (!gifResponse.ok) {
+        throw new Error(`HTTP ${gifResponse.status}: ${gifResponse.statusText}`);
+      }
+
+      const gifBlob = await gifResponse.blob();
+      console.log(`📥 Loaded GIF file: ${name} (${gifBlob.size} bytes)`);
+
+      // Convert GIF back to LED frames
+      const frames = await this.convertGifToFrames(gifBlob);
+
+      // Convert metadata to LEDFile format with actual frames
+      const file: LEDFile = {
+        name: fileMetadata.name,
+        rows: fileMetadata.rows || 8,
+        columns: fileMetadata.columns || 8,
+        totalFrames: fileMetadata.totalFrames || 1,
+        frames: frames, // Use actual frames from GIF
+        createdAt: new Date((fileMetadata.createdAt || 0) * 1000).toISOString(),
+        updatedAt: new Date((fileMetadata.updatedAt || 0) * 1000).toISOString(),
+        fileType: 'gif',
+        hasThumbnail: true
+      };
+
+      console.log('✅ File loaded via REST API (GIF format):', file);
       return file;
     } catch (error) {
       console.error('❌ Failed to get file via REST API:', error);
@@ -240,7 +339,7 @@ export class RestStorage {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      // For listing files, we still use JSON format for metadata
+      // For listing files, we use JSON format for metadata
       const filesMetadata = await response.json();
       console.log('🔍 Debug: Raw response from ESP32:', filesMetadata);
       console.log('🔍 Debug: Response type:', typeof filesMetadata);
@@ -252,20 +351,20 @@ export class RestStorage {
         return [];
       }
 
-      // Convert metadata to full files by requesting each one
-      const files: LEDFile[] = [];
-      for (const metadata of filesMetadata) {
-        try {
-          const file = await this.requestFile(metadata.name);
-          if (file) {
-            files.push(file);
-          }
-        } catch (error) {
-          console.warn(`⚠️ Failed to load file ${metadata.name}:`, error);
-        }
-      }
+      // Convert metadata to LEDFile format
+      const files: LEDFile[] = filesMetadata.map((metadata: any) => ({
+        name: metadata.name,
+        rows: metadata.rows || 8,
+        columns: metadata.columns || 8,
+        totalFrames: metadata.totalFrames || 1,
+        frames: [], // We don't load the actual frames for listing
+        createdAt: new Date((metadata.createdAt || 0) * 1000).toISOString(),
+        updatedAt: new Date((metadata.updatedAt || 0) * 1000).toISOString(),
+        fileType: 'gif',
+        hasThumbnail: true
+      }));
 
-      console.log('✅ All files retrieved via REST API (binary format):', files);
+      console.log('✅ All files retrieved via REST API (GIF format):', files);
       return files;
     } catch (error) {
       console.error('❌ Failed to get all files via REST API:', error);
@@ -387,6 +486,103 @@ export class RestStorage {
     } catch (error) {
       console.error('❌ Failed to delete playlist via REST API:', error);
       throw error;
+    }
+  }
+
+  // Convert GIF back to LED frames
+  private async convertGifToFrames(gifBlob: Blob): Promise<string[][][]> {
+    // Load gif-frames library if not already loaded
+    if (typeof (window as any).gifFrames === 'undefined') {
+      await this.loadGifFramesLibrary();
+    }
+
+    const frames: string[][][] = [];
+
+    try {
+      // Use gif-frames to extract frames from the GIF
+      const extractedFrames = await (window as any).gifFrames({
+        url: URL.createObjectURL(gifBlob),
+        frames: 'all',
+        outputType: 'canvas'
+      });
+
+      for (const frame of extractedFrames) {
+        const canvas = frame.getImage();
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+        // Convert image data to LED frame
+        const ledFrame: string[][] = [];
+        for (let row = 0; row < canvas.height; row++) {
+          const rowData: string[] = [];
+          for (let col = 0; col < canvas.width; col++) {
+            const index = (row * canvas.width + col) * 4;
+            const r = imageData.data[index];
+            const g = imageData.data[index + 1];
+            const b = imageData.data[index + 2];
+            const hex = `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+            rowData.push(hex);
+          }
+          ledFrame.push(rowData);
+        }
+        frames.push(ledFrame);
+      }
+
+      console.log(`🔄 Converted GIF to ${frames.length} LED frames`);
+      return frames;
+    } catch (error) {
+      console.error('❌ Failed to convert GIF to frames:', error);
+      throw new Error('Failed to convert GIF to LED frames');
+    }
+  }
+
+  // Load gif-frames library
+  private async loadGifFramesLibrary(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/gif-frames@1.0.1/dist/gif-frames.min.js';
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('Failed to load gif-frames library'));
+      document.head.appendChild(script);
+    });
+  }
+
+  // Parse GIF metadata (dimensions and frame count)
+  private async parseGifMetadata(gifBlob: Blob): Promise<{width: number, height: number, frameCount: number}> {
+    // Load gif-frames library if not already loaded
+    if (typeof (window as any).gifFrames === 'undefined') {
+      await this.loadGifFramesLibrary();
+    }
+
+    try {
+      // Use gif-frames to get metadata
+      const frames = await (window as any).gifFrames({
+        url: URL.createObjectURL(gifBlob),
+        frames: 'all',
+        outputType: 'canvas'
+      });
+
+      if (frames.length === 0) {
+        throw new Error('No frames found in GIF');
+      }
+
+      // Get dimensions from first frame
+      const firstFrame = frames[0];
+      const canvas = firstFrame.getImage();
+
+      return {
+        width: canvas.width,
+        height: canvas.height,
+        frameCount: frames.length
+      };
+    } catch (error) {
+      console.error('Failed to parse GIF metadata:', error);
+      // Fallback to default values
+      return {
+        width: 8,
+        height: 8,
+        frameCount: 1
+      };
     }
   }
 }

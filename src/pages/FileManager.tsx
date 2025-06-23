@@ -11,11 +11,29 @@ import { Plus, FilePen, Trash2, Palette, List } from 'lucide-react';
 import { storageAdapter } from '@/lib/storage-adapter';
 import { useDataLoader } from '@/hooks/useDataLoader';
 
+// Get the base URL for API calls (same as used in storage adapter)
+const getBaseUrl = () => {
+  // Use the same logic as storage adapter
+  if (import.meta.env.VITE_ESP32_REST_URL) {
+    return import.meta.env.VITE_ESP32_REST_URL;
+  }
+
+  // Fallback to localStorage
+  const savedUrl = localStorage.getItem('esp32_base_url');
+  if (savedUrl) {
+    return savedUrl;
+  }
+
+  // No URL configured - throw error
+  throw new Error('ESP32 REST API URL not configured. Please set VITE_ESP32_REST_URL environment variable or configure in localStorage.');
+};
+
 export const FileManager: React.FC = () => {
   const navigate = useNavigate();
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [newFileName, setNewFileName] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const baseUrl = getBaseUrl();
 
   // Use proper data loading pattern
   const { data: files = [], loading, error, refetch } = useDataLoader(
@@ -193,6 +211,8 @@ export const FileManager: React.FC = () => {
                           frames={file.frames}
                           rows={file.rows}
                           columns={file.columns}
+                          fileName={file.name}
+                          baseUrl={baseUrl}
                           className="ml-4"
                         />
                       </div>
@@ -216,6 +236,8 @@ export const FileManager: React.FC = () => {
                       frames={selectedFileData.frames}
                       rows={selectedFileData.rows}
                       columns={selectedFileData.columns}
+                      fileName={selectedFileData.name}
+                      baseUrl={baseUrl}
                       className="mx-auto mb-4"
                     />
                     <p className="text-sm text-gray-400 mb-4">

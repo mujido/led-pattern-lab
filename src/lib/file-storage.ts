@@ -6,6 +6,8 @@ export interface LEDFile {
   totalFrames: number;
   createdAt: string;
   updatedAt: string;
+  fileType?: 'gif';
+  hasThumbnail?: boolean;
 }
 
 const STORAGE_KEY = 'led-pattern-files';
