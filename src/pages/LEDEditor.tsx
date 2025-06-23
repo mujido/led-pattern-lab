@@ -1,13 +1,14 @@
-import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ColorPicker } from '@/components/ColorPicker';
 import { RecentColors } from '@/components/RecentColors';
-import { LEDGrid } from '@/components/LEDGrid';
+import { LEDGridCanvas } from '@/components/LEDGridCanvas';
 import { GridControls } from '@/components/GridControls';
 import { AnimationControls } from '@/components/AnimationControls';
 import { EditorHeader } from '@/components/EditorHeader';
 import { CollapsibleCard } from '@/components/CollapsibleCard';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,12 +18,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { AlertCircle, ChevronUp, ChevronDown } from 'lucide-react';
-import { type LEDFile } from '@/lib/file-storage';
+import { AlertCircle, ChevronUp, ChevronDown, ArrowLeft, Save, Trash2 } from 'lucide-react';
+import { LEDFile } from '@/lib/file-storage';
 import { toast } from 'sonner';
-import { storageAdapter } from '@/lib/storage-adapter';
 import { useAnimationState } from '@/hooks/useAnimationState';
+import { storageAdapter } from '@/lib/storage-adapter';
 
 // Lazy load the ImportExportPanel to reduce initial bundle size
 const ImportExportPanel = lazy(() => import('@/components/ImportExportPanel').then(module => ({ default: module.ImportExportPanel })));
@@ -351,7 +353,7 @@ const LEDEditor: React.FC = () => {
               <div className="mb-4 text-center">
                 <span className="text-lg font-semibold">Frame {currentFrame + 1} of {totalFrames}</span>
               </div>
-              <LEDGrid
+              <LEDGridCanvas
                 rows={rows}
                 columns={columns}
                 colors={ledFrames[currentFrame] || []}

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { ColorPicker } from '@/components/ColorPicker';
 import { RecentColors } from '@/components/RecentColors';
-import { LEDGrid } from '@/components/LEDGrid';
+import { LEDGridCanvas } from '@/components/LEDGridCanvas';
 import { GridControls } from '@/components/GridControls';
 import { AnimationControls } from '@/components/AnimationControls';
 import { Card } from '@/components/ui/card';
@@ -192,7 +192,7 @@ const Index = () => {
               <div className="mb-4 text-center">
                 <span className="text-lg font-semibold">Frame {currentFrame + 1} of {totalFrames}</span>
               </div>
-              <LEDGrid
+              <LEDGridCanvas
                 rows={rows}
                 columns={columns}
                 colors={currentFrameColors}
