@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { ColorPicker } from '@/components/ColorPicker';
 import { RecentColors } from '@/components/RecentColors';
 import { LEDGrid } from '@/components/LEDGrid';
@@ -16,7 +16,7 @@ const Index = () => {
   const [totalFrames, setTotalFrames] = useState(8);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(10); // FPS
+  const [playbackSpeed, setPlaybackSpeed] = useState(15); // Reduced to 15 FPS for better performance
   const [startFrame, setStartFrame] = useState(0);
   const [endFrame, setEndFrame] = useState(7);
 
@@ -27,19 +27,10 @@ const Index = () => {
     )
   );
 
-  // Animation playback effect
-  useEffect(() => {
-    if (!isPlaying) return;
-
-    const interval = setInterval(() => {
-      setCurrentFrame(prev => {
-        const next = prev + 1;
-        return next > endFrame ? startFrame : next;
-      });
-    }, 1000 / playbackSpeed);
-
-    return () => clearInterval(interval);
-  }, [isPlaying, playbackSpeed, startFrame, endFrame]);
+  // Memoize current frame colors to prevent unnecessary re-renders
+  const currentFrameColors = useMemo(() => {
+    return ledFrames[currentFrame] || [];
+  }, [ledFrames, currentFrame]);
 
   // Debug effect to monitor state changes
   useEffect(() => {
@@ -204,7 +195,7 @@ const Index = () => {
               <LEDGrid
                 rows={rows}
                 columns={columns}
-                colors={ledFrames[currentFrame] || []}
+                colors={currentFrameColors}
                 onLedClick={handleLedClick}
               />
             </Card>

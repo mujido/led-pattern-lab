@@ -1,4 +1,3 @@
-
 import React, { memo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,12 +21,12 @@ interface AnimationControlsProps {
 }
 
 // Memoized play button component to prevent unnecessary re-renders
-const PlayButton = memo(({ isPlaying, onPlayToggle }: { 
-  isPlaying: boolean; 
-  onPlayToggle: () => void; 
+const PlayButton = memo(({ isPlaying, onPlayToggle }: {
+  isPlaying: boolean;
+  onPlayToggle: () => void;
 }) => {
   const Icon = isPlaying ? Pause : Play;
-  
+
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();

@@ -1,5 +1,4 @@
-
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 export interface AnimationState {
   totalFrames: number;
@@ -14,21 +13,58 @@ export const useAnimationState = () => {
   const [totalFrames, setTotalFrames] = useState(8);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [playbackSpeed, setPlaybackSpeed] = useState(10);
+  const [playbackSpeed, setPlaybackSpeed] = useState(15);
   const [startFrame, setStartFrame] = useState(0);
   const [endFrame, setEndFrame] = useState(7);
 
+  // Use refs for animation frame tracking
+  const animationRef = useRef<number>();
+  const lastFrameTimeRef = useRef<number>(0);
+  const frameCountRef = useRef<number>(0);
+
   useEffect(() => {
-    if (!isPlaying) return;
+    if (!isPlaying) {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
+      }
+      return;
+    }
 
-    const interval = setInterval(() => {
-      setCurrentFrame(prev => {
-        const next = prev + 1;
-        return next > endFrame ? startFrame : next;
-      });
-    }, 1000 / playbackSpeed);
+    const animate = (currentTime: number) => {
+      if (!lastFrameTimeRef.current) {
+        lastFrameTimeRef.current = currentTime;
+      }
 
-    return () => clearInterval(interval);
+      const deltaTime = currentTime - lastFrameTimeRef.current;
+      const frameInterval = 1000 / playbackSpeed; // milliseconds per frame
+
+      if (deltaTime >= frameInterval) {
+        // Calculate how many frames to advance
+        const framesToAdvance = Math.floor(deltaTime / frameInterval);
+        frameCountRef.current += framesToAdvance;
+
+        // Update current frame
+        setCurrentFrame(prev => {
+          const frameRange = endFrame - startFrame + 1;
+          const newFrame = startFrame + (frameCountRef.current % frameRange);
+          return newFrame;
+        });
+
+        lastFrameTimeRef.current = currentTime;
+      }
+
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = undefined;
+      }
+    };
   }, [isPlaying, playbackSpeed, startFrame, endFrame]);
 
   const handlePlayToggle = useCallback(() => {
