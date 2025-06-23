@@ -19,8 +19,20 @@ const getESP32RestUrl = () => {
 
 // Check if we should use REST API (hybrid mode or production)
 const shouldUseRestApi = () => {
-  // In development mode, always try REST API for ESP32 communication
-  console.log('🔍 Debug: shouldUseRestApi() = true');
+  // Check if we're running in Lovable (development mode without ESP32)
+  if (import.meta.env.DEV && !import.meta.env.VITE_ESP32_REST_URL) {
+    console.log('🔍 Debug: Running in Lovable - using local storage only');
+    return false;
+  }
+
+  // In development mode with ESP32 URL, try REST API for ESP32 communication
+  if (import.meta.env.DEV && import.meta.env.VITE_ESP32_REST_URL) {
+    console.log('🔍 Debug: Running in hybrid mode - attempting ESP32 connection');
+    return true;
+  }
+
+  // In production, always try REST API
+  console.log('🔍 Debug: Running in production - attempting ESP32 connection');
   return true;
 };
 

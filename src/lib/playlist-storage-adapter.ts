@@ -164,16 +164,25 @@ class WebSocketPlaylistStorageAdapter implements PlaylistStorageAdapter {
 
 // Environment detection
 const isProduction = () => {
-  return window.location.hostname !== 'localhost' &&
-         !window.location.hostname.includes('lovable.app') &&
-         process.env.NODE_ENV === 'production';
+  // Check if we're running in Lovable
+  if (window.location.hostname.includes('lovable.app')) {
+    return false; // Use local storage in Lovable
+  }
+
+  // Check if we're running in development mode
+  if (import.meta.env.DEV) {
+    return false; // Use local storage in development
+  }
+
+  // In production (ESP32), use WebSocket storage
+  return true;
 };
 
 // Create the appropriate storage adapter based on environment
 export const createPlaylistStorageAdapter = (): PlaylistStorageAdapter => {
   if (isProduction()) {
     // In production, use WebSocket storage
-    const wsUrl = process.env.VITE_WEBSOCKET_URL || 'ws://your-device-ip:8080/ws';
+    const wsUrl = import.meta.env.VITE_WEBSOCKET_URL || 'ws://your-device-ip:8080/ws';
     return new WebSocketPlaylistStorageAdapter(wsUrl);
   } else {
     // In development (Lovable), use localStorage

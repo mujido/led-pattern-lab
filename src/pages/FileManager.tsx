@@ -25,8 +25,9 @@ const getBaseUrl = () => {
     return savedUrl;
   }
 
-  // No URL configured - throw error
-  throw new Error('ESP32 REST API URL not configured. Please set VITE_ESP32_REST_URL environment variable or configure in localStorage.');
+  // No URL configured - return null for local storage mode
+  console.log('🔍 Debug: No ESP32 URL configured, using local storage mode');
+  return null;
 };
 
 export const FileManager: React.FC = () => {
