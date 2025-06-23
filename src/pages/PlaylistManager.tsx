@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
@@ -107,15 +108,15 @@ export const PlaylistManager: React.FC = () => {
     }
   };
 
-  const handleAddFileToPlaylist = async (playlistId: string, fileId: string) => {
+  const handleAddFileToPlaylist = async (playlistId: string, fileName: string) => {
     try {
       const playlist = playlists.find(p => p.id === playlistId);
-      const file = files.find(f => f.id === fileId);
-      if (!playlist || !file || playlist.items.some(item => item.fileId === fileId)) return;
+      const file = files.find(f => f.name === fileName);
+      if (!playlist || !file || playlist.items.some(item => item.fileId === fileName)) return;
 
       const newItem = {
         id: playlistStorageAdapter.generateId(),
-        fileId: fileId,
+        fileId: fileName,
         fileName: file.name,
         playbackRate: 100, // Default 100ms per frame
         order: playlist.items.length
@@ -136,14 +137,14 @@ export const PlaylistManager: React.FC = () => {
     }
   };
 
-  const handleRemoveFileFromPlaylist = async (playlistId: string, fileId: string) => {
+  const handleRemoveFileFromPlaylist = async (playlistId: string, fileName: string) => {
     try {
       const playlist = playlists.find(p => p.id === playlistId);
       if (!playlist) return;
 
       const updatedPlaylist = {
         ...playlist,
-        items: playlist.items.filter(item => item.fileId !== fileId),
+        items: playlist.items.filter(item => item.fileId !== fileName),
         updatedAt: new Date().toISOString()
       };
 
@@ -157,7 +158,7 @@ export const PlaylistManager: React.FC = () => {
   };
 
   const getFileName = (fileId: string) => {
-    const file = files.find(f => f.id === fileId);
+    const file = files.find(f => f.name === fileId);
     return file ? file.name : 'Unknown File';
   };
 
@@ -364,11 +365,11 @@ export const PlaylistManager: React.FC = () => {
                         <h5 className="text-sm font-medium text-gray-300 mb-2">Add files:</h5>
                         <div className="flex flex-wrap gap-2">
                           {files
-                            .filter((file) => !playlist.items.some(item => item.fileId === file.id))
+                            .filter((file) => !playlist.items.some(item => item.fileId === file.name))
                             .map((file) => (
                               <Button
-                                key={file.id}
-                                onClick={() => handleAddFileToPlaylist(playlist.id, file.id)}
+                                key={file.name}
+                                onClick={() => handleAddFileToPlaylist(playlist.id, file.name)}
                                 size="sm"
                                 variant="outline"
                                 className="text-xs border-gray-500 hover:bg-gray-600"
@@ -378,7 +379,7 @@ export const PlaylistManager: React.FC = () => {
                               </Button>
                             ))}
                         </div>
-                        {files.filter((file) => !playlist.items.some(item => item.fileId === file.id)).length === 0 && (
+                        {files.filter((file) => !playlist.items.some(item => item.fileId === file.name)).length === 0 && (
                           <p className="text-xs text-gray-500">All files are already in this playlist</p>
                         )}
                       </div>
