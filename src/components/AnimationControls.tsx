@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +21,34 @@ interface AnimationControlsProps {
   onEndFrameChange: (frame: number) => void;
 }
 
-export const AnimationControls: React.FC<AnimationControlsProps> = ({
+// Memoized play button component to prevent unnecessary re-renders
+const PlayButton = memo(({ isPlaying, onPlayToggle }: { 
+  isPlaying: boolean; 
+  onPlayToggle: () => void; 
+}) => {
+  const Icon = isPlaying ? Pause : Play;
+  
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onPlayToggle();
+  }, [onPlayToggle]);
+
+  return (
+    <Button
+      onClick={handleClick}
+      className="w-full"
+      type="button"
+    >
+      <Icon className="w-4 h-4 mr-2" />
+      {isPlaying ? 'Pause' : 'Play'}
+    </Button>
+  );
+});
+
+PlayButton.displayName = 'PlayButton';
+
+export const AnimationControls: React.FC<AnimationControlsProps> = memo(({
   totalFrames,
   currentFrame,
   isPlaying,
@@ -35,15 +62,38 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
   onStartFrameChange,
   onEndFrameChange
 }) => {
-  const Icon = isPlaying ? Pause : Play;
-
-  const handleWheel = (e: React.WheelEvent, value: number, onChange: (val: number) => void, min: number, max: number) => {
+  const handleWheel = useCallback((e: React.WheelEvent, value: number, onChange: (val: number) => void, min: number, max: number) => {
     e.preventDefault();
     e.stopPropagation();
     const delta = e.deltaY > 0 ? -1 : 1;
     const newValue = Math.min(max, Math.max(min, value + delta));
     onChange(newValue);
-  };
+  }, []);
+
+  const handleFrameCountChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onFrameCountChange(parseInt(e.target.value) || 1);
+  }, [onFrameCountChange]);
+
+  const handleCurrentFrameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onCurrentFrameChange(Math.min(totalFrames - 1, Math.max(0, parseInt(e.target.value) || 0)));
+  }, [onCurrentFrameChange, totalFrames]);
+
+  const handleStartFrameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onStartFrameChange(Math.min(endFrame, Math.max(0, parseInt(e.target.value) || 0)));
+  }, [onStartFrameChange, endFrame]);
+
+  const handleEndFrameChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onEndFrameChange(Math.min(totalFrames - 1, Math.max(startFrame, parseInt(e.target.value) || startFrame)));
+  }, [onEndFrameChange, totalFrames, startFrame]);
+
+  const handleSpeedChange = useCallback((value: number[]) => {
+    onPlaybackSpeedChange(value[0]);
+  }, [onPlaybackSpeedChange]);
+
+  const handleRangeSliderChange = useCallback((value: number[]) => {
+    onStartFrameChange(value[0]);
+    onEndFrameChange(value[1]);
+  }, [onStartFrameChange, onEndFrameChange]);
 
   return (
     <div className="space-y-4">
@@ -56,7 +106,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
           min="1"
           max="100"
           value={totalFrames}
-          onChange={(e) => onFrameCountChange(parseInt(e.target.value) || 1)}
+          onChange={handleFrameCountChange}
           onWheel={(e) => handleWheel(e, totalFrames, onFrameCountChange, 1, 100)}
           className="bg-gray-700 border-gray-600 text-white mt-1"
         />
@@ -70,22 +120,18 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
           min="0"
           max={totalFrames - 1}
           value={currentFrame}
-          onChange={(e) => onCurrentFrameChange(Math.min(totalFrames - 1, Math.max(0, parseInt(e.target.value) || 0)))}
+          onChange={handleCurrentFrameChange}
           onWheel={(e) => handleWheel(e, currentFrame, onCurrentFrameChange, 0, totalFrames - 1)}
           className="bg-gray-700 border-gray-600 text-white text-center"
         />
       </div>
 
-      {/* Playback Controls */}
+      {/* Playback Controls - Isolated to prevent event bubbling */}
       <div className="space-y-2">
         <Label className="text-sm text-gray-300">Playback</Label>
-        <Button
-          onClick={onPlayToggle}
-          className="w-full"
-        >
-          <Icon className="w-4 h-4 mr-2" />
-          {isPlaying ? 'Pause' : 'Play'}
-        </Button>
+        <div onClick={(e) => e.stopPropagation()}>
+          <PlayButton isPlaying={isPlaying} onPlayToggle={onPlayToggle} />
+        </div>
       </div>
 
       {/* Playback Speed */}
@@ -93,7 +139,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
         <Label className="text-sm text-gray-300">Speed: {playbackSpeed} FPS</Label>
         <Slider
           value={[playbackSpeed]}
-          onValueChange={(value) => onPlaybackSpeedChange(value[0])}
+          onValueChange={handleSpeedChange}
           min={1}
           max={30}
           step={1}
@@ -113,7 +159,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
               min="0"
               max={endFrame}
               value={startFrame}
-              onChange={(e) => onStartFrameChange(Math.min(endFrame, Math.max(0, parseInt(e.target.value) || 0)))}
+              onChange={handleStartFrameChange}
               onWheel={(e) => handleWheel(e, startFrame, onStartFrameChange, 0, endFrame)}
               className="bg-gray-700 border-gray-600 text-white text-sm"
             />
@@ -126,7 +172,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
               min={startFrame}
               max={totalFrames - 1}
               value={endFrame}
-              onChange={(e) => onEndFrameChange(Math.min(totalFrames - 1, Math.max(startFrame, parseInt(e.target.value) || startFrame)))}
+              onChange={handleEndFrameChange}
               onWheel={(e) => handleWheel(e, endFrame, onEndFrameChange, startFrame, totalFrames - 1)}
               className="bg-gray-700 border-gray-600 text-white text-sm"
             />
@@ -140,10 +186,7 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
         <div className="relative">
           <Slider
             value={[startFrame, endFrame]}
-            onValueChange={(value) => {
-              onStartFrameChange(value[0]);
-              onEndFrameChange(value[1]);
-            }}
+            onValueChange={handleRangeSliderChange}
             min={0}
             max={totalFrames - 1}
             step={1}
@@ -157,4 +200,6 @@ export const AnimationControls: React.FC<AnimationControlsProps> = ({
       </div>
     </div>
   );
-};
+});
+
+AnimationControls.displayName = 'AnimationControls';

@@ -292,6 +292,11 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     setExpandedPanel(prev => prev === panel ? null : panel);
   };
 
+  // Memoized play toggle handler to prevent recreation on every render
+  const handlePlayToggle = useCallback(() => {
+    setIsPlaying(!isPlaying);
+  }, [isPlaying]);
+
   const CollapsibleCard = ({ 
     title, 
     panelKey, 
@@ -314,7 +319,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
           <Icon className="w-5 h-5" />
         </button>
         {isExpanded && (
-          <div className="px-4 pb-4">
+          <div className="px-4 pb-4" onClick={(e) => e.stopPropagation()}>
             {children}
           </div>
         )}
@@ -334,8 +339,8 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     }
   };
 
-  const clamp = (value: number, min: number = 1, max: number = 64) => 
-    Math.min(max, Math.max(min, value));
+  const clamp = (value: number, min: number = 1, max: number = 64) 
+    => Math.min(max, Math.max(min, value));
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -498,7 +503,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
                 endFrame={endFrame}
                 onFrameCountChange={handleFrameCountChange}
                 onCurrentFrameChange={setCurrentFrame}
-                onPlayToggle={() => setIsPlaying(!isPlaying)}
+                onPlayToggle={handlePlayToggle}
                 onPlaybackSpeedChange={setPlaybackSpeed}
                 onStartFrameChange={setStartFrame}
                 onEndFrameChange={setEndFrame}
