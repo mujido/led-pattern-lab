@@ -179,19 +179,36 @@ class HybridStorageAdapter {
   // Get files from local storage only
   getLocalFiles(): LEDFile[] {
     const files: LEDFile[] = [];
+
+    // Check for individual file keys (mirrors ESP32 storage)
     for (let i = 0; i < this.localStorage.length; i++) {
       const key = this.localStorage.key(i);
-      if (key && key.endsWith('.led')) {
+      if (key) {
+        // Skip playlist keys
+        if (key.startsWith('playlist_')) {
+          continue;
+        }
+
         try {
           const data = this.localStorage.getItem(key);
           if (data) {
-            files.push(JSON.parse(data));
+            const parsed = JSON.parse(data);
+            // Check if this is a valid LED file by looking for required properties
+            if (parsed &&
+                typeof parsed.name === 'string' &&
+                Array.isArray(parsed.frames) &&
+                typeof parsed.rows === 'number' &&
+                typeof parsed.columns === 'number' &&
+                typeof parsed.totalFrames === 'number') {
+              files.push(parsed);
+            }
           }
         } catch (error) {
           console.error('Failed to parse file:', key, error);
         }
       }
     }
+
     return files.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
   }
 
