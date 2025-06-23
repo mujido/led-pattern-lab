@@ -1,7 +1,5 @@
-import GIF from 'gif.js';
-import gifFrames from 'gif-frames';
-import { PNG } from 'pngjs';
-import { Buffer } from 'buffer';
+// GIF-only image processing with CDN-loaded libraries
+// Removed PNG/APNG support to save space
 
 export interface FrameData {
   width: number;
@@ -11,7 +9,7 @@ export interface FrameData {
 }
 
 export interface ImageFormat {
-  type: 'gif' | 'png' | 'apng';
+  type: 'gif';
   frames: FrameData[];
 }
 
@@ -83,19 +81,25 @@ function scaleCanvas(sourceCanvas: HTMLCanvasElement, targetWidth: number, targe
   return targetCanvas;
 }
 
-// Load GIF file and extract frames
+// Load GIF file and extract frames using CDN-loaded gif-frames
 export async function loadGif(file: File, targetWidth: number, targetHeight: number, cumulative: boolean): Promise<ImageFormat> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
     reader.onload = async (e) => {
       try {
+        // Use CDN-loaded gif-frames library
+        const gifFrames = (window as any).gifFrames;
+        if (!gifFrames) {
+          throw new Error('GIF library not loaded');
+        }
+
         await gifFrames({
           url: URL.createObjectURL(file),
           frames: 'all',
           outputType: 'canvas',
           cumulative,
-        }).then(frames => {
+        }).then((frames: any[]) => {
           const frameData: FrameData[] = frames.map((frame: any) => {
             const sourceCanvas = frame.getImage();
             const scaledCanvas = scaleCanvas(sourceCanvas, targetWidth, targetHeight);
@@ -125,49 +129,16 @@ export async function loadGif(file: File, targetWidth: number, targetHeight: num
   });
 }
 
-// Load PNG file (single frame or APNG)
-export async function loadPng(file: File, targetWidth: number, targetHeight: number): Promise<ImageFormat> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-
-    reader.onload = async (e) => {
-      try {
-        const buffer = Buffer.from(e.target?.result as ArrayBuffer);
-        const png = PNG.sync.read(buffer);
-
-        const sourceCanvas = document.createElement('canvas');
-        sourceCanvas.width = png.width;
-        sourceCanvas.height = png.height;
-        const sourceCtx = sourceCanvas.getContext('2d')!;
-        const sourceImageData = sourceCtx.createImageData(png.width, png.height);
-        sourceImageData.data.set(png.data);
-        sourceCtx.putImageData(sourceImageData, 0, 0);
-
-        const scaledCanvas = scaleCanvas(sourceCanvas, targetWidth, targetHeight);
-        const ctx = scaledCanvas.getContext('2d')!;
-        const scaledImageData = ctx.getImageData(0, 0, targetWidth, targetHeight);
-
-        resolve({
-          type: 'png',
-          frames: [{
-            width: targetWidth,
-            height: targetHeight,
-            pixels: imageDataToColorArray(scaledImageData)
-          }]
-        });
-      } catch (error) {
-        reject(error);
-      }
-    };
-
-    reader.onerror = reject;
-    reader.readAsArrayBuffer(file);
-  });
-}
-
-// Save frames as GIF
+// Save frames as GIF using CDN-loaded gif.js
 export async function saveAsGif(frames: FrameData[], filename: string = 'animation.gif'): Promise<void> {
   return new Promise((resolve, reject) => {
+    // Use CDN-loaded gif.js library
+    const GIF = (window as any).GIF;
+    if (!GIF) {
+      reject(new Error('GIF library not loaded'));
+      return;
+    }
+
     const gif = new GIF({
       workers: 2,
       quality: 10,
@@ -206,45 +177,8 @@ export async function saveAsGif(frames: FrameData[], filename: string = 'animati
   });
 }
 
-// Save frames as PNG (single frame for now)
-export async function saveAsPng(frames: FrameData[], filename: string = 'animation.png'): Promise<void> {
-  if (frames.length === 0) {
-    throw new Error('No frames to save');
-  }
-
-  const frame = frames[0]; // Save first frame for now
-  const png = new PNG({
-    width: frame.width,
-    height: frame.height
-  });
-
-  for (let y = 0; y < frame.height; y++) {
-    for (let x = 0; x < frame.width; x++) {
-      const color = frame.pixels[y]?.[x] || '#000000';
-      const rgb = hexToRgb(color);
-      const index = (y * frame.width + x) * 4;
-      png.data[index] = rgb.r;
-      png.data[index + 1] = rgb.g;
-      png.data[index + 2] = rgb.b;
-      png.data[index + 3] = 255; // alpha
-    }
-  }
-
-  const buffer = PNG.sync.write(png);
-  const blob = new Blob([buffer], { type: 'image/png' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-// Detect file type
-export function detectFileType(file: File): 'gif' | 'png' | 'unknown' {
+// Detect file type (GIF only)
+export function detectFileType(file: File): 'gif' | 'unknown' {
   if (file.type === 'image/gif') return 'gif';
-  if (file.type === 'image/png') return 'png';
   return 'unknown';
 }

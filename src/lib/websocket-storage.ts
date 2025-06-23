@@ -1,4 +1,3 @@
-
 export interface WebSocketStorageConfig {
   url: string;
   reconnectAttempts?: number;
@@ -11,6 +10,7 @@ export class WebSocketStorage {
   private reconnectCount = 0;
   private messageQueue: any[] = [];
   private isConnected = false;
+  private messageHandlers: Map<string, (data: any) => void> = new Map();
 
   constructor(config: WebSocketStorageConfig) {
     this.config = {
@@ -24,7 +24,7 @@ export class WebSocketStorage {
     return new Promise((resolve, reject) => {
       try {
         this.ws = new WebSocket(this.config.url);
-        
+
         this.ws.onopen = () => {
           console.log('WebSocket connected');
           this.isConnected = true;
@@ -81,13 +81,24 @@ export class WebSocketStorage {
   private handleMessage(data: string): void {
     try {
       const message = JSON.parse(data);
-      // Handle incoming messages from server
       console.log('Received message:', message);
+
+      // Call registered handlers
+      const handler = this.messageHandlers.get(message.type);
+      if (handler) {
+        handler(message);
+      }
     } catch (error) {
       console.error('Failed to parse WebSocket message:', error);
     }
   }
 
+  // Register message handlers
+  onMessage(type: string, handler: (data: any) => void): void {
+    this.messageHandlers.set(type, handler);
+  }
+
+  // File management methods
   saveFile(file: any): void {
     this.sendMessage({
       type: 'SAVE_FILE',
@@ -111,6 +122,34 @@ export class WebSocketStorage {
   requestFile(id: string): void {
     this.sendMessage({
       type: 'GET_FILE',
+      payload: { id }
+    });
+  }
+
+  // Playlist management methods
+  savePlaylist(playlist: any): void {
+    this.sendMessage({
+      type: 'SAVE_PLAYLIST',
+      payload: playlist
+    });
+  }
+
+  deletePlaylist(id: string): void {
+    this.sendMessage({
+      type: 'DELETE_PLAYLIST',
+      payload: { id }
+    });
+  }
+
+  requestAllPlaylists(): void {
+    this.sendMessage({
+      type: 'GET_ALL_PLAYLISTS'
+    });
+  }
+
+  requestPlaylist(id: string): void {
+    this.sendMessage({
+      type: 'GET_PLAYLIST',
       payload: { id }
     });
   }

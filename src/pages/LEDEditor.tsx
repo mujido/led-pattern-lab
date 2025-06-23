@@ -1,12 +1,11 @@
-
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ColorPicker } from '@/components/ColorPicker';
 import { RecentColors } from '@/components/RecentColors';
 import { LEDGrid } from '@/components/LEDGrid';
 import { GridControls } from '@/components/GridControls';
 import { AnimationControls } from '@/components/AnimationControls';
 import { EditorHeader } from '@/components/EditorHeader';
-import { ImportExportPanel } from '@/components/ImportExportPanel';
 import { CollapsibleCard } from '@/components/CollapsibleCard';
 import { Card } from '@/components/ui/card';
 import {
@@ -19,18 +18,19 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { type LEDFile } from '@/lib/file-storage';
 import { toast } from 'sonner';
 import { storageAdapter } from '@/lib/storage-adapter';
 import { useAnimationState } from '@/hooks/useAnimationState';
 
-interface LEDEditorProps {
-  fileId: string | null;
-  onBackToFiles: () => void;
-}
+// Lazy load the ImportExportPanel to reduce initial bundle size
+const ImportExportPanel = lazy(() => import('@/components/ImportExportPanel').then(module => ({ default: module.ImportExportPanel })));
 
-const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
+const LEDEditor: React.FC = () => {
+  const navigate = useNavigate();
+  const { fileName: urlFileName } = useParams<{ fileName?: string }>();
+
   const [selectedColor, setSelectedColor] = useState('#ff0000');
   const [recentColors, setRecentColors] = useState(['#ff0000', '#00ff00', '#0000ff']);
   const [rows, setRows] = useState(8);
@@ -70,12 +70,12 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     handleFrameCountChange
   } = useAnimationState();
 
-  // Load file if fileId is provided
+  // Load file if fileName is provided
   useEffect(() => {
     const loadFile = async () => {
-      if (fileId) {
+      if (urlFileName) {
         try {
-          const file = await storageAdapter.getFile(fileId);
+          const file = await storageAdapter.getFile(urlFileName);
           if (file) {
             setFileName(file.name);
             setRows(file.rows);
@@ -85,7 +85,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
             setCurrentFrame(0);
             setStartFrame(0);
             setEndFrame(file.totalFrames - 1);
-            
+
             // Set initial saved state
             const stateString = JSON.stringify({
               name: file.name,
@@ -112,7 +112,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
         setCurrentFrame(0);
         setStartFrame(0);
         setEndFrame(7);
-        
+
         // Set initial saved state for new file
         const stateString = JSON.stringify({
           name: 'Untitled',
@@ -127,7 +127,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     };
 
     loadFile();
-  }, [fileId, setTotalFrames, setCurrentFrame, setStartFrame, setEndFrame]);
+  }, [urlFileName, setTotalFrames, setCurrentFrame, setStartFrame, setEndFrame]);
 
   // Track changes to detect unsaved modifications
   useEffect(() => {
@@ -192,20 +192,19 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
 
   const handleSaveFile = async () => {
     const fileData: LEDFile = {
-      id: fileId || storageAdapter.generateId(),
       name: fileName,
       frames: ledFrames,
       rows,
       columns,
       totalFrames,
-      createdAt: fileId ? (await storageAdapter.getFile(fileId))?.createdAt || new Date().toISOString() : new Date().toISOString(),
+      createdAt: fileName ? (await storageAdapter.getFile(fileName))?.createdAt || new Date().toISOString() : new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
     try {
       await storageAdapter.saveFile(fileData);
       toast.success('File saved successfully!');
-      
+
       // Update saved state
       const stateString = JSON.stringify({
         name: fileName,
@@ -226,26 +225,26 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     if (hasUnsavedChanges) {
       setShowExitDialog(true);
     } else {
-      onBackToFiles();
+      navigate('/files');
     }
   };
 
   const handleSaveAndExit = async () => {
     await handleSaveFile();
     setShowExitDialog(false);
-    onBackToFiles();
+    navigate('/files');
   };
 
   const handleDiscardAndExit = () => {
     setShowExitDialog(false);
-    onBackToFiles();
+    navigate('/files');
   };
 
-  const togglePanel = (panel: string) => {
-    setExpandedPanel(prev => prev === panel ? null : panel as any);
+  const togglePanel = (panel: 'grid' | 'colors' | 'animation' | 'importexport') => {
+    setExpandedPanel(prev => prev === panel ? null : panel);
   };
 
-  const handleImport = useCallback((frames: string[][][], newRows: number, newColumns: number) => {
+  const handleImport = (frames: string[][][], newRows: number, newColumns: number) => {
     setRows(newRows);
     setColumns(newColumns);
     setTotalFrames(frames.length);
@@ -253,7 +252,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
     setCurrentFrame(0);
     setStartFrame(0);
     setEndFrame(frames.length - 1);
-  }, [setTotalFrames, setCurrentFrame, setStartFrame, setEndFrame]);
+  };
 
   const wrappedHandleFrameCountChange = useCallback((newFrameCount: number) => {
     handleFrameCountChange(newFrameCount, rows, columns, setLedFrames);
@@ -271,8 +270,8 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
 
         <div className="grid lg:grid-cols-5 gap-6">
           <div className="lg:col-span-1 space-y-6">
-            <CollapsibleCard 
-              title="Grid Settings" 
+            <CollapsibleCard
+              title="Grid Settings"
               panelKey="grid"
               isExpanded={expandedPanel === 'grid'}
               onToggle={togglePanel}
@@ -285,8 +284,8 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
               />
             </CollapsibleCard>
 
-            <CollapsibleCard 
-              title="Colors" 
+            <CollapsibleCard
+              title="Colors"
               panelKey="colors"
               isExpanded={expandedPanel === 'colors'}
               onToggle={togglePanel}
@@ -306,8 +305,8 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
               </div>
             </CollapsibleCard>
 
-            <CollapsibleCard 
-              title="Animation" 
+            <CollapsibleCard
+              title="Animation"
               panelKey="animation"
               isExpanded={expandedPanel === 'animation'}
               onToggle={togglePanel}
@@ -328,19 +327,21 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
               />
             </CollapsibleCard>
 
-            <CollapsibleCard 
-              title="Import/Export" 
+            <CollapsibleCard
+              title="Import/Export"
               panelKey="importexport"
               isExpanded={expandedPanel === 'importexport'}
               onToggle={togglePanel}
             >
-              <ImportExportPanel
-                fileName={fileName}
-                rows={rows}
-                columns={columns}
-                ledFrames={ledFrames}
-                onImport={handleImport}
-              />
+              <Suspense fallback={<div>Loading...</div>}>
+                <ImportExportPanel
+                  fileName={fileName}
+                  rows={rows}
+                  columns={columns}
+                  ledFrames={ledFrames}
+                  onImport={handleImport}
+                />
+              </Suspense>
             </CollapsibleCard>
           </div>
 
@@ -374,7 +375,7 @@ const LEDEditor: React.FC<LEDEditorProps> = ({ fileId, onBackToFiles }) => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel 
+            <AlertDialogCancel
               onClick={() => setShowExitDialog(false)}
               className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
             >

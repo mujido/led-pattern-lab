@@ -1,5 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,15 +16,14 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { ArrowLeft, Plus, Play, Trash2, Edit, Save, X } from 'lucide-react';
-import { playlistStorage, type Playlist } from '@/lib/playlist-storage';
-import { storageAdapter, type LEDFile } from '@/lib/storage-adapter';
+import { playlistStorageAdapter } from '@/lib/playlist-storage-adapter';
+import { type Playlist } from '@/lib/playlist-storage';
+import { storageAdapter } from '@/lib/storage-adapter';
+import { type LEDFile } from '@/lib/file-storage';
 import { toast } from 'sonner';
 
-interface PlaylistManagerProps {
-  onBackToFiles: () => void;
-}
-
-export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles }) => {
+export const PlaylistManager: React.FC = () => {
+  const navigate = useNavigate();
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [files, setFiles] = useState<LEDFile[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -39,7 +38,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
   const loadData = async () => {
     try {
       const [playlistData, fileData] = await Promise.all([
-        playlistStorage.getAllPlaylists(),
+        playlistStorageAdapter.getAllPlaylists(),
         storageAdapter.getAllFiles()
       ]);
       setPlaylists(playlistData);
@@ -55,14 +54,14 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
 
     try {
       const newPlaylist: Playlist = {
-        id: playlistStorage.generateId(),
+        id: playlistStorageAdapter.generateId(),
         name: newPlaylistName.trim(),
         items: [],
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
 
-      await playlistStorage.savePlaylist(newPlaylist);
+      await playlistStorageAdapter.savePlaylist(newPlaylist);
       setPlaylists(prev => [...prev, newPlaylist]);
       setNewPlaylistName('');
       setShowCreateDialog(false);
@@ -75,7 +74,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
 
   const handleDeletePlaylist = async (id: string) => {
     try {
-      await playlistStorage.deletePlaylist(id);
+      await playlistStorageAdapter.deletePlaylist(id);
       setPlaylists(prev => prev.filter(p => p.id !== id));
       toast.success('Playlist deleted successfully!');
     } catch (error) {
@@ -97,7 +96,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
         updatedAt: new Date().toISOString()
       };
 
-      await playlistStorage.savePlaylist(updatedPlaylist);
+      await playlistStorageAdapter.savePlaylist(updatedPlaylist);
       setPlaylists(prev => prev.map(p => p.id === id ? updatedPlaylist : p));
       setEditingId(null);
       setEditingName('');
@@ -115,7 +114,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
       if (!playlist || !file || playlist.items.some(item => item.fileId === fileId)) return;
 
       const newItem = {
-        id: playlistStorage.generateId(),
+        id: playlistStorageAdapter.generateId(),
         fileId: fileId,
         fileName: file.name,
         playbackRate: 100, // Default 100ms per frame
@@ -128,7 +127,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
         updatedAt: new Date().toISOString()
       };
 
-      await playlistStorage.savePlaylist(updatedPlaylist);
+      await playlistStorageAdapter.savePlaylist(updatedPlaylist);
       setPlaylists(prev => prev.map(p => p.id === playlistId ? updatedPlaylist : p));
       toast.success('File added to playlist!');
     } catch (error) {
@@ -148,7 +147,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
         updatedAt: new Date().toISOString()
       };
 
-      await playlistStorage.savePlaylist(updatedPlaylist);
+      await playlistStorageAdapter.savePlaylist(updatedPlaylist);
       setPlaylists(prev => prev.map(p => p.id === playlistId ? updatedPlaylist : p));
       toast.success('File removed from playlist!');
     } catch (error) {
@@ -178,7 +177,7 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
         <header className="text-center mb-8">
           <div className="flex items-center justify-between mb-4">
             <Button
-              onClick={onBackToFiles}
+              onClick={() => navigate('/files')}
               variant="outline"
               className="btn-secondary border-blue-600"
             >
@@ -232,8 +231,8 @@ export const PlaylistManager: React.FC<PlaylistManagerProps> = ({ onBackToFiles 
                     <AlertDialogCancel className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600">
                       Cancel
                     </AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={handleCreatePlaylist} 
+                    <AlertDialogAction
+                      onClick={handleCreatePlaylist}
                       disabled={!newPlaylistName.trim()}
                       className="btn-secondary"
                     >

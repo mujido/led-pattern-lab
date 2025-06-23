@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
@@ -8,42 +9,31 @@ import { FilePreview } from '@/components/FilePreview';
 import { fileStorage, type LEDFile } from '@/lib/file-storage';
 import { Plus, FilePen, Trash2, Palette, List } from 'lucide-react';
 import { storageAdapter } from '@/lib/storage-adapter';
+import { useDataLoader } from '@/hooks/useDataLoader';
 
-interface FileManagerProps {
-  onOpenFile: (fileId: string) => void;
-  onCreateNew: () => void;
-  onOpenPlaylists: () => void;
-}
-
-export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNew, onOpenPlaylists }) => {
-  const [files, setFiles] = useState<LEDFile[]>([]);
+export const FileManager: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [newFileName, setNewFileName] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    loadFiles();
-  }, []);
+  // Use proper data loading pattern
+  const { data: files = [], loading, error, refetch } = useDataLoader(
+    () => storageAdapter.getAllFiles(),
+    []
+  );
 
-  const loadFiles = async () => {
-    setIsLoading(true);
-    try {
-      const loadedFiles = await storageAdapter.getAllFiles();
-      setFiles(loadedFiles);
-    } catch (error) {
-      console.error('Failed to load files:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Ensure files is always an array
+  const safeFiles = Array.isArray(files) ? files : [];
 
   const handleCreateNew = async () => {
     if (!newFileName.trim()) return;
-    
+
+    // Use clean name without extension - ESP32 handles .led internally
+    const fileName = newFileName.trim();
+
     const newFile: LEDFile = {
-      id: storageAdapter.generateId(),
-      name: newFileName.trim(),
+      name: fileName,
       frames: [Array(8).fill(null).map(() => Array(16).fill('#000000'))],
       rows: 8,
       columns: 16,
@@ -53,29 +43,37 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
     };
 
     try {
-      await storageAdapter.saveFile(newFile);
+      await storageAdapter.createFile(newFile);
       setNewFileName('');
       setShowCreateDialog(false);
-      await loadFiles();
-      onOpenFile(newFile.id);
+      await refetch(); // Refresh the data
+      navigate(`/editor/${encodeURIComponent(newFile.name)}`);
     } catch (error) {
       console.error('Failed to create file:', error);
     }
   };
 
-  const handleDeleteFile = async (fileId: string) => {
+  const handleDeleteFile = async (fileName: string) => {
     try {
-      await storageAdapter.deleteFile(fileId);
-      if (selectedFile === fileId) {
+      await storageAdapter.deleteFile(fileName);
+      if (selectedFile === fileName) {
         setSelectedFile(null);
       }
-      await loadFiles();
+      await refetch(); // Refresh the data
     } catch (error) {
       console.error('Failed to delete file:', error);
     }
   };
 
-  const selectedFileData = selectedFile ? files.find(f => f.id === selectedFile) : null;
+  const handleOpenFile = (fileName: string) => {
+    navigate(`/editor/${encodeURIComponent(fileName)}`);
+  };
+
+  const handleOpenPlaylists = () => {
+    navigate('/playlists');
+  };
+
+  const selectedFileData = selectedFile ? safeFiles.find(f => f.name === selectedFile) : null;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white p-4">
@@ -86,8 +84,8 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
           </h1>
           <p className="text-gray-400">Manage your LED pattern designs</p>
           <div className="flex justify-center gap-4 mt-4">
-            <Button 
-              onClick={onOpenPlaylists}
+            <Button
+              onClick={handleOpenPlaylists}
               className="btn-primary"
             >
               <List className="w-4 h-4 mr-2" />
@@ -95,6 +93,26 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
             </Button>
           </div>
         </header>
+
+        {/* Error Display */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-900/20 border border-red-700 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
+                <p className="text-red-300">{error}</p>
+              </div>
+              <Button
+                onClick={refetch}
+                variant="outline"
+                size="sm"
+                className="border-red-700 text-red-300 hover:bg-red-800/20"
+              >
+                Retry
+              </Button>
+            </div>
+          </div>
+        )}
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* File List */}
@@ -139,11 +157,11 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
                 </AlertDialog>
               </div>
 
-              {isLoading ? (
+              {loading ? (
                 <div className="text-center py-12 text-gray-400">
                   <p>Loading files...</p>
                 </div>
-              ) : files.length === 0 ? (
+              ) : safeFiles.length === 0 ? (
                 <div className="text-center py-12 text-gray-400">
                   <Palette className="w-16 h-16 mx-auto mb-4 opacity-50" />
                   <p className="text-lg mb-2">No files yet</p>
@@ -151,15 +169,15 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {files.map((file) => (
+                  {safeFiles.map((file) => (
                     <div
-                      key={file.id}
+                      key={file.name}
                       className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                        selectedFile === file.id
+                        selectedFile === file.name
                           ? 'border-blue-500 bg-blue-900/20'
                           : 'border-gray-600 bg-gray-700/50 hover:bg-gray-700'
                       }`}
-                      onClick={() => setSelectedFile(file.id)}
+                      onClick={() => setSelectedFile(file.name)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
@@ -189,7 +207,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
           <div className="lg:col-span-1">
             <Card className="p-6 bg-gray-800 border-gray-700">
               <h2 className="text-xl font-semibold mb-4">Actions</h2>
-              
+
               {selectedFileData ? (
                 <div className="space-y-4">
                   <div className="text-center">
@@ -206,7 +224,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
                   </div>
 
                   <Button
-                    onClick={() => onOpenFile(selectedFileData.id)}
+                    onClick={() => handleOpenFile(selectedFileData.name)}
                     className="w-full btn-primary"
                   >
                     <FilePen className="w-4 h-4 mr-2" />
@@ -235,7 +253,7 @@ export const FileManager: React.FC<FileManagerProps> = ({ onOpenFile, onCreateNe
                           Cancel
                         </AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={() => handleDeleteFile(selectedFileData.id)}
+                          onClick={() => handleDeleteFile(selectedFileData.name)}
                           className="btn-danger"
                         >
                           Delete

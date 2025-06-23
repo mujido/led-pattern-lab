@@ -1,5 +1,4 @@
 export interface LEDFile {
-  id: string;
   name: string;
   frames: string[][][];
   rows: number;
@@ -24,29 +23,25 @@ export const fileStorage = {
 
   saveFile(file: LEDFile): void {
     const files = this.getAllFiles();
-    const existingIndex = files.findIndex(f => f.id === file.id);
-    
+    const existingIndex = files.findIndex(f => f.name === file.name);
+
     if (existingIndex >= 0) {
       files[existingIndex] = { ...file, updatedAt: new Date().toISOString() };
     } else {
       files.push({ ...file, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
     }
-    
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
   },
 
-  deleteFile(id: string): void {
+  deleteFile(name: string): void {
     const files = this.getAllFiles();
-    const filtered = files.filter(f => f.id !== id);
+    const filtered = files.filter(f => f.name !== name);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
   },
 
-  getFile(id: string): LEDFile | null {
+  getFile(name: string): LEDFile | null {
     const files = this.getAllFiles();
-    return files.find(f => f.id === id) || null;
-  },
-
-  generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+    return files.find(f => f.name === name) || null;
   }
 };
