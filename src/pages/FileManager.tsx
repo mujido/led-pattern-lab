@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { FilePreview } from '@/components/FilePreview';
+import { StorageUsageIndicator } from '@/components/StorageUsageIndicator';
 import { fileStorage, type LEDFile } from '@/lib/file-storage';
 import { Plus, FilePen, Trash2, Palette, List } from 'lucide-react';
 import { storageAdapter } from '@/lib/storage-adapter';
@@ -111,6 +112,11 @@ export const FileManager: React.FC = () => {
             </Button>
           </div>
         </header>
+
+        {/* Storage Usage Indicator */}
+        <div className="mb-6">
+          <StorageUsageIndicator files={safeFiles} />
+        </div>
 
         {/* Error Display */}
         {error && (
