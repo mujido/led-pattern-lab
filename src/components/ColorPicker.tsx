@@ -76,48 +76,32 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                   Choose Color
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                {/* HTML Color Picker */}
-                <div className="space-y-2">
-                  <Label className="text-sm text-gray-300">Color Picker</Label>
+              <div className="space-y-6">
+                {/* Color Wheel */}
+                <div className="flex justify-center">
                   <input
                     type="color"
                     value={selectedColor}
                     onChange={(e) => handleColorInputChange(e.target.value)}
-                    className="w-full h-16 rounded-lg border-2 border-gray-600 cursor-pointer"
+                    className="w-32 h-32 rounded-full border-4 border-gray-600 cursor-pointer"
                   />
                 </div>
                 
-                {/* Color Input */}
-                <div className="space-y-2">
-                  <Label className="text-sm text-gray-300">Hex Code</Label>
-                  <Input
-                    type="text"
-                    value={selectedColor}
-                    onChange={(e) => handleColorInputChange(e.target.value)}
-                    className="bg-gray-700 border-gray-600 text-white font-mono"
-                    placeholder="#ffffff"
-                  />
-                </div>
-
                 {/* Preset Colors */}
-                <div className="space-y-2">
-                  <Label className="text-sm text-gray-300">Preset Colors</Label>
-                  <div className="grid grid-cols-8 gap-2">
-                    {presetColors.map((color) => (
-                      <button
-                        key={color}
-                        onClick={() => handlePresetColorClick(color)}
-                        className={`w-8 h-8 rounded-md border-2 hover:scale-110 transition-all duration-200 ${
-                          selectedColor === color 
-                            ? 'border-purple-400 ring-2 ring-purple-400 ring-opacity-50' 
-                            : 'border-gray-600 hover:border-gray-400'
-                        }`}
-                        style={{ backgroundColor: color }}
-                        title={color}
-                      />
-                    ))}
-                  </div>
+                <div className="grid grid-cols-8 gap-2">
+                  {presetColors.map((color) => (
+                    <button
+                      key={color}
+                      onClick={() => handlePresetColorClick(color)}
+                      className={`w-8 h-8 rounded-md border-2 hover:scale-110 transition-all duration-200 ${
+                        selectedColor === color 
+                          ? 'border-purple-400 ring-2 ring-purple-400 ring-opacity-50' 
+                          : 'border-gray-600 hover:border-gray-400'
+                      }`}
+                      style={{ backgroundColor: color }}
+                      title={color}
+                    />
+                  ))}
                 </div>
               </div>
             </DialogContent>
