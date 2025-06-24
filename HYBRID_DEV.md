@@ -1,16 +1,59 @@
-# Hybrid Development Setup
+# ESP32 LED Strip Designer - Mode Guide
 
-This setup allows you to develop the frontend with hot reloading while using the ESP32 for file management via REST API.
+This project supports three distinct modes based on how you run the application:
 
-## How It Works
+## Mode 1: Local Development (`npm run dev`)
+- **Storage**: localStorage only
+- **Use case**: Local development (Lovable.app, local testing, etc.)
+- **ESP32**: Not needed
+- **Environment**: No ESP32 URL required
 
-- **Frontend**: Runs on localhost:8080 with hot reloading
-- **ESP32**: Serves static files and provides REST API for file management
-- **Storage**: ESP32 storage only (no localStorage backup)
+## Mode 2: Hybrid Development (`npm run dev:hybrid`)
+- **Storage**: ESP32 REST API
+- **Use case**: Development with hot reloading + real ESP32 storage
+- **ESP32**: Required and running
+- **Environment**: `VITE_ESP32_REST_URL=http://YOUR_ESP32_IP`
 
-## Setup Instructions
+## Mode 3: Production Deployment (`npm run build:esp32`)
+- **Storage**: ESP32 REST API
+- **Use case**: Production deployment on ESP32
+- **ESP32**: Serves everything (web files + REST API)
+- **Environment**: No ESP32 URL required (uses current host)
 
-### 1. Configure ESP32 REST API URL
+## Quick Start
+
+### For Local Development:
+```bash
+cd web
+npm run dev
+```
+- No environment configuration needed
+- Uses localStorage for file storage
+- Perfect for Lovable.app, local testing, or offline development
+
+### For Hybrid Development:
+```bash
+cd web
+# Ensure your .env file has: VITE_ESP32_REST_URL=http://YOUR_ESP32_IP
+npm run dev:hybrid
+```
+- Frontend runs on localhost:8080 with hot reloading
+- Files are saved/loaded via ESP32 REST API
+- Perfect for testing with real hardware
+
+### For Production Deployment:
+```bash
+cd web
+npm run build:esp32
+# Then flash to ESP32
+cd ..
+idf.py build
+idf.py flash
+```
+- Builds optimized files for ESP32
+- ESP32 serves everything from SPIFFS
+
+## Environment Configuration
 
 Create a `.env` file in the `web` directory:
 
@@ -19,94 +62,54 @@ cd web
 cp env.example .env
 ```
 
-Then edit `.env` and update the ESP32 IP address:
-
+For hybrid development, set your ESP32 IP:
 ```env
-# ESP32 REST API URL for hybrid development mode
-VITE_ESP32_REST_URL=http://YOUR_ESP32_IP
+VITE_ESP32_REST_URL=http://192.168.87.211
 ```
 
-### 2. Start Development Server
+## Benefits of Each Mode
 
-```bash
-cd web
-npm run dev:hybrid
-```
+### Local Development
+- ✅ Fast development (Lovable.app, local testing)
+- ✅ No hardware required
+- ✅ Instant file operations
+- ✅ Works offline
+- ❌ No real ESP32 testing
 
-This will start the frontend on `http://localhost:8080`
+### Hybrid Development
+- ✅ Hot reloading for frontend changes
+- ✅ Real ESP32 storage testing
+- ✅ Fast iteration cycle
+- ✅ Debug REST API in browser dev tools
+- ❌ Requires ESP32 to be running
 
-### 3. Build and Flash ESP32
-
-```bash
-# Build the ESP32 firmware
-idf.py build
-
-# Flash to ESP32
-idf.py flash
-
-# Monitor ESP32 output
-idf.py monitor
-```
-
-### 4. Access the Application
-
-- **Development Mode**: `http://localhost:8080` (hot reloading + ESP32 REST API)
-- **Production Mode**: `http://YOUR_ESP32_IP` (ESP32 serves everything)
-
-## Development Workflow
-
-1. **Frontend Development**: Edit React components in `web/src/` - changes will hot reload
-2. **File Management**: Files are saved/loaded via REST API to ESP32
-3. **Testing**: Test file operations with real ESP32 storage
-4. **Deployment**: Build for ESP32 with `npm run build:esp32`
-
-## Modes
-
-### Development Mode (`npm run dev:hybrid`)
-- Frontend: Localhost:8080 with hot reloading
-- Storage: ESP32 only (no localStorage)
-- File Operations: REST API to ESP32
-- Configuration: Uses `.env` file for ESP32 REST API URL
-
-### Production Mode (`npm run build:esp32`)
-- Frontend: Served by ESP32 from SPIFFS
-- Storage: ESP32 only
-- File Operations: REST API to ESP32
-
-## Environment Variables
-
-The hybrid mode uses the following environment variable:
-
-- `VITE_ESP32_REST_URL`: REST API URL for ESP32 communication
-  - Example: `http://192.168.1.100`
-  - No default fallback
+### Production Deployment
+- ✅ Full ESP32 integration
+- ✅ Optimized for production
+- ✅ No external dependencies
+- ❌ Slower development cycle
 
 ## Troubleshooting
 
+### Mode Detection Issues
+Check the browser console for mode detection logs:
+```
+🔧 App Mode Detection: {
+  mode: "hybrid_dev",
+  description: "Hybrid Development - Local PC + ESP32 REST API",
+  storageType: "restApi",
+  restApiUrl: "http://192.168.87.211",
+  ...
+}
+```
+
 ### REST API Connection Issues
-1. Check ESP32 IP address in `.env` file
+1. Verify ESP32 IP address in `.env` file
 2. Ensure ESP32 is running and HTTP server is initialized
-3. Check browser console for connection errors
+3. Check ESP32 console for error messages
+4. Verify network connectivity
 
 ### File Operations Not Working
-1. Verify ESP32 HTTP server is responding
-2. Check ESP32 console for error messages
-3. Ensure SPIFFS is properly initialized
-
-### Hot Reload Not Working
-1. Make sure you're using `npm run dev:hybrid`
-2. Check that Vite dev server is running on port 8080
-3. Verify no CORS issues in browser console
-
-### Environment Variable Issues
-1. Ensure `.env` file exists in the `web` directory
-2. Check that `VITE_ESP32_REST_URL` is set correctly
-3. Restart the development server after changing `.env`
-
-## Benefits
-
-- **Fast Development**: Hot reloading for frontend changes
-- **Real Testing**: File operations use actual ESP32 storage
-- **Easy Deployment**: Same codebase works for both dev and production
-- **Debugging**: Can inspect REST API communication in browser dev tools
-- **Clean Configuration**: No hardcoded IP addresses in source code
+1. Check browser console for REST API errors
+2. Verify ESP32 SPIFFS is properly initialized
+3. Check ESP32 console for file operation errors

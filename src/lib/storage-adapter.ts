@@ -1,36 +1,6 @@
 import { LEDFile } from './file-storage';
 import { RestStorage } from './rest-storage';
-
-// Get ESP32 REST API URL from environment variable
-const getESP32RestUrl = () => {
-  if (import.meta.env.VITE_ESP32_REST_URL) {
-    return import.meta.env.VITE_ESP32_REST_URL;
-  }
-
-  // In production mode (running from ESP32), use the current host
-  if (!import.meta.env.DEV) {
-    return window.location.origin;
-  }
-
-  // No ESP32 URL configured - return null for local storage mode
-  return null;
-};
-
-// Check if we should use REST API (hybrid mode or production)
-const shouldUseRestApi = () => {
-  // Check if we're running in Lovable (development mode without ESP32)
-  if (import.meta.env.DEV && !import.meta.env.VITE_ESP32_REST_URL) {
-    return false;
-  }
-
-  // In development mode with ESP32 URL, try REST API for ESP32 communication (hybrid mode)
-  if (import.meta.env.DEV && import.meta.env.VITE_ESP32_REST_URL) {
-    return true;
-  }
-
-  // In production, always try REST API (will use current host if no URL configured)
-  return true;
-};
+import { currentMode, shouldUseRestApi, getRestApiUrl, logModeInfo } from './mode-detector';
 
 class HybridStorageAdapter {
   private restStorage: RestStorage | null = null;
@@ -42,6 +12,9 @@ class HybridStorageAdapter {
     this.localStorage = window.localStorage;
     this.isRestApiMode = shouldUseRestApi();
 
+    // Log mode information for debugging
+    logModeInfo();
+
     if (this.isRestApiMode) {
       this.connectionPromise = this.initRestApi();
     }
@@ -49,7 +22,7 @@ class HybridStorageAdapter {
 
   private async initRestApi() {
     try {
-      const restUrl = getESP32RestUrl();
+      const restUrl = getRestApiUrl();
       if (!restUrl) {
         throw new Error('No ESP32 REST URL configured');
       }
@@ -310,7 +283,7 @@ class HybridStorageAdapter {
       }
 
       try {
-        const restUrl = getESP32RestUrl();
+        const restUrl = getRestApiUrl();
         const response = await fetch(`${restUrl}/api/reset-metadata`, {
           method: 'POST',
           headers: {

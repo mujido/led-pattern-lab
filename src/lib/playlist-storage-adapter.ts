@@ -1,6 +1,7 @@
 import { playlistStorage } from './playlist-storage';
 import { WebSocketStorage } from './websocket-storage';
 import type { Playlist } from './playlist-storage';
+import { currentMode, logModeInfo } from './mode-detector';
 
 export interface PlaylistStorageAdapter {
   getAllPlaylists(): Promise<Playlist[]>;
@@ -162,30 +163,18 @@ class WebSocketPlaylistStorageAdapter implements PlaylistStorageAdapter {
   }
 }
 
-// Environment detection
-const isProduction = () => {
-  // Check if we're running in Lovable
-  if (window.location.hostname.includes('lovable.app')) {
-    return false; // Use local storage in Lovable
-  }
-
-  // Check if we're running in development mode
-  if (import.meta.env.DEV) {
-    return false; // Use local storage in development
-  }
-
-  // In production (ESP32), use WebSocket storage
-  return true;
-};
 
 // Create the appropriate storage adapter based on environment
 export const createPlaylistStorageAdapter = (): PlaylistStorageAdapter => {
-  if (isProduction()) {
+  // Log mode information for debugging
+  logModeInfo();
+
+  if (currentMode.isProduction) {
     // In production, use WebSocket storage
     const wsUrl = import.meta.env.VITE_WEBSOCKET_URL || 'ws://your-device-ip:8080/ws';
     return new WebSocketPlaylistStorageAdapter(wsUrl);
   } else {
-    // In development (Lovable), use localStorage
+    // In development (local or hybrid), use localStorage
     return new LocalPlaylistStorageAdapter();
   }
 };

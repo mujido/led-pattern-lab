@@ -4,10 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "dev:hybrid": "vite --mode development",
-    "build": "tsc && vite build",
-    "build:dev": "tsc && vite build --mode development",
+    "dev": "vite --mode dev",
+    "dev:hybrid": "vite --mode hybrid",
+    "build": "tsc && vite build --mode production",
+    "build:dev": "tsc && vite build --mode dev",
+    "build:hybrid": "tsc && vite build --mode hybrid",
     "build:esp32": "tsc && vite build --mode production",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"

@@ -7,40 +7,19 @@ import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { FilePreview } from '@/components/FilePreview';
 import { StorageUsageIndicator } from '@/components/StorageUsageIndicator';
-import { fileStorage, type LEDFile } from '@/lib/file-storage';
-import { Plus, FilePen, Trash2, Palette, List, RotateCcw } from 'lucide-react';
+import { type LEDFile } from '@/lib/file-storage';
+import { Plus, FilePen, Trash2, Palette, List, RotateCcw, Edit, Play, Download, Upload, Settings } from 'lucide-react';
 import { storageAdapter } from '@/lib/storage-adapter';
 import { useDataLoader } from '@/hooks/useDataLoader';
 import { toast } from 'sonner';
-
-// Get the base URL for API calls (same as used in storage adapter)
-const getBaseUrl = () => {
-  // Use the same logic as storage adapter
-  if (import.meta.env.VITE_ESP32_REST_URL) {
-    return import.meta.env.VITE_ESP32_REST_URL;
-  }
-
-  // In production mode (running from ESP32), use the current host
-  if (!import.meta.env.DEV) {
-    return window.location.origin;
-  }
-
-  // Fallback to localStorage
-  const savedUrl = localStorage.getItem('esp32_base_url');
-  if (savedUrl) {
-    return savedUrl;
-  }
-
-  // No URL configured - return null for local storage mode
-  return null;
-};
+import { getRestApiUrl } from '@/lib/mode-detector';
 
 export const FileManager: React.FC = () => {
   const navigate = useNavigate();
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [newFileName, setNewFileName] = useState('');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const baseUrl = getBaseUrl();
+  const baseUrl = getRestApiUrl();
 
   // Use proper data loading pattern
   const { data: files = [], loading, error, refetch } = useDataLoader(
