@@ -84,7 +84,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                     type="color"
                     value={selectedColor}
                     onChange={(e) => handleColorInputChange(e.target.value)}
-                    className="w-full h-12 rounded-lg border-2 border-gray-600 cursor-pointer"
+                    className="w-full h-16 rounded-lg border-2 border-gray-600 cursor-pointer"
                   />
                 </div>
                 
@@ -103,7 +103,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 {/* Preset Colors */}
                 <div className="space-y-2">
                   <Label className="text-sm text-gray-300">Preset Colors</Label>
-                  <div className="grid grid-cols-6 gap-2 max-h-32 overflow-y-auto">
+                  <div className="grid grid-cols-8 gap-2">
                     {presetColors.map((color) => (
                       <button
                         key={color}
