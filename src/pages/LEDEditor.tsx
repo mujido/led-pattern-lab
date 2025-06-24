@@ -164,6 +164,10 @@ const LEDEditor: React.FC = () => {
     addToRecentColors(color);
   }, [addToRecentColors]);
 
+  const handleRecentColorSelect = useCallback((color: string) => {
+    setSelectedColor(color);
+  }, []);
+
   const handleLedClick = useCallback((row: number, col: number) => {
     if (isDropperActive) {
       // Sample color from the clicked LED
@@ -309,21 +313,14 @@ const LEDEditor: React.FC = () => {
               isExpanded={expandedPanel === 'colors'}
               onToggle={togglePanel}
             >
-              <div className="space-y-6">
-                <ColorPicker
-                  selectedColor={selectedColor}
-                  onColorChange={handleColorChange}
-                  isDropperActive={isDropperActive}
-                  onDropperToggle={setIsDropperActive}
-                />
-                <div>
-                  <h3 className="text-sm font-medium text-gray-300 mb-3">Recent Colors</h3>
-                  <RecentColors
-                    colors={recentColors}
-                    onColorSelect={setSelectedColor}
-                  />
-                </div>
-              </div>
+              <ColorPicker
+                selectedColor={selectedColor}
+                onColorChange={handleColorChange}
+                isDropperActive={isDropperActive}
+                onDropperToggle={setIsDropperActive}
+                recentColors={recentColors}
+                onRecentColorSelect={handleRecentColorSelect}
+              />
             </CollapsibleCard>
 
             <CollapsibleCard
