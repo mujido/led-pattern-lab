@@ -11,6 +11,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Pipette, Palette } from 'lucide-react';
+import { ColorWheel } from './ColorWheel';
 
 interface ColorPickerProps {
   selectedColor: string;
@@ -79,11 +80,10 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
               <div className="space-y-6">
                 {/* Color Wheel */}
                 <div className="flex justify-center">
-                  <input
-                    type="color"
-                    value={selectedColor}
-                    onChange={(e) => handleColorInputChange(e.target.value)}
-                    className="w-32 h-32 rounded-full border-4 border-gray-600 cursor-pointer"
+                  <ColorWheel
+                    selectedColor={selectedColor}
+                    onColorChange={handleColorInputChange}
+                    size={200}
                   />
                 </div>
                 
