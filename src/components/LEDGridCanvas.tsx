@@ -5,13 +5,15 @@ interface LEDGridCanvasProps {
   columns: number;
   colors: string[][];
   onLedClick: (row: number, col: number) => void;
+  isDropperActive?: boolean;
 }
 
 export const LEDGridCanvas: React.FC<LEDGridCanvasProps> = React.memo(({
   rows,
   columns,
   colors,
-  onLedClick
+  onLedClick,
+  isDropperActive = false
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -101,7 +103,9 @@ export const LEDGridCanvas: React.FC<LEDGridCanvasProps> = React.memo(({
         width={canvasWidth}
         height={canvasHeight}
         onClick={handleCanvasClick}
-        className="cursor-pointer border border-gray-600 rounded"
+        className={`border border-gray-600 rounded ${
+          isDropperActive ? 'cursor-crosshair' : 'cursor-pointer'
+        }`}
         style={{
           imageRendering: 'pixelated', // For crisp LED pixels
         }}

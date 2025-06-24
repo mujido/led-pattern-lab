@@ -1,19 +1,34 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Pipette } from 'lucide-react';
 
 interface ColorPickerProps {
   selectedColor: string;
   onColorChange: (color: string) => void;
+  isDropperActive?: boolean;
+  onDropperToggle?: (active: boolean) => void;
 }
 
-export const ColorPicker: React.FC<ColorPickerProps> = ({ selectedColor, onColorChange }) => {
+export const ColorPicker: React.FC<ColorPickerProps> = ({ 
+  selectedColor, 
+  onColorChange,
+  isDropperActive = false,
+  onDropperToggle
+}) => {
   const presetColors = [
     '#000000', '#ffffff', '#ff0000', '#00ff00', '#0000ff', '#ffff00',
     '#ff00ff', '#00ffff', '#ff8000', '#8000ff', '#0080ff', '#80ff00',
     '#ff0080', '#80ff80', '#8080ff', '#ff8080', '#808080', '#400040'
   ];
+
+  const handleDropperClick = () => {
+    if (onDropperToggle) {
+      onDropperToggle(!isDropperActive);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -39,7 +54,25 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({ selectedColor, onColor
               placeholder="#ffffff"
             />
           </div>
+          <Button
+            variant={isDropperActive ? "default" : "outline"}
+            size="sm"
+            onClick={handleDropperClick}
+            className={`${
+              isDropperActive 
+                ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+            }`}
+            title="Color Dropper - Click to sample colors from the grid"
+          >
+            <Pipette className="w-4 h-4" />
+          </Button>
         </div>
+        {isDropperActive && (
+          <p className="text-xs text-purple-400">
+            Click on any LED in the grid to sample its color
+          </p>
+        )}
       </div>
       
       {/* Preset Colors Section */}

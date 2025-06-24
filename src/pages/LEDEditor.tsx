@@ -20,7 +20,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { AlertCircle, ChevronUp, ChevronDown, ArrowLeft, Save, Trash2 } from 'lucide-react';
+import { AlertCircle, ChevronUp, ChevronDown, ArrowLeft, Save, Trash2, Pipette } from 'lucide-react';
 import { LEDFile } from '@/lib/file-storage';
 import { toast } from 'sonner';
 import { useAnimationState } from '@/hooks/useAnimationState';
@@ -38,6 +38,7 @@ const LEDEditor: React.FC = () => {
   const [rows, setRows] = useState(8);
   const [columns, setColumns] = useState(16);
   const [fileName, setFileName] = useState('Untitled');
+  const [isDropperActive, setIsDropperActive] = useState(false);
 
   // Single expanded panel state
   const [expandedPanel, setExpandedPanel] = useState<'grid' | 'colors' | 'animation' | 'importexport' | null>('grid');
@@ -164,13 +165,22 @@ const LEDEditor: React.FC = () => {
   }, [addToRecentColors]);
 
   const handleLedClick = useCallback((row: number, col: number) => {
-    setLedFrames(prev => {
-      const newFrames = [...prev];
-      newFrames[currentFrame] = newFrames[currentFrame].map(rowArray => [...rowArray]);
-      newFrames[currentFrame][row][col] = selectedColor;
-      return newFrames;
-    });
-  }, [selectedColor, currentFrame]);
+    if (isDropperActive) {
+      // Sample color from the clicked LED
+      const sampledColor = ledFrames[currentFrame]?.[row]?.[col] || '#000000';
+      setSelectedColor(sampledColor);
+      addToRecentColors(sampledColor);
+      setIsDropperActive(false); // Turn off dropper after sampling
+    } else {
+      // Normal LED painting behavior
+      setLedFrames(prev => {
+        const newFrames = [...prev];
+        newFrames[currentFrame] = newFrames[currentFrame].map(rowArray => [...rowArray]);
+        newFrames[currentFrame][row][col] = selectedColor;
+        return newFrames;
+      });
+    }
+  }, [selectedColor, currentFrame, ledFrames, isDropperActive, addToRecentColors]);
 
   const handleGridSizeChange = useCallback((newRows: number, newCols: number) => {
     setRows(newRows);
@@ -303,6 +313,8 @@ const LEDEditor: React.FC = () => {
                 <ColorPicker
                   selectedColor={selectedColor}
                   onColorChange={handleColorChange}
+                  isDropperActive={isDropperActive}
+                  onDropperToggle={setIsDropperActive}
                 />
                 <div>
                   <h3 className="text-sm font-medium text-gray-300 mb-3">Recent Colors</h3>
@@ -359,12 +371,19 @@ const LEDEditor: React.FC = () => {
             <Card className="p-6 bg-gray-800 border-gray-700">
               <div className="mb-4 text-center">
                 <span className="text-lg font-semibold">Frame {currentFrame + 1} of {totalFrames}</span>
+                {isDropperActive && (
+                  <div className="mt-2 text-sm text-purple-400 flex items-center justify-center gap-2">
+                    <Pipette className="w-4 h-4" />
+                    Color dropper active - Click any LED to sample its color
+                  </div>
+                )}
               </div>
               <LEDGridCanvas
                 rows={rows}
                 columns={columns}
                 colors={ledFrames[currentFrame] || []}
                 onLedClick={handleLedClick}
+                isDropperActive={isDropperActive}
               />
             </Card>
           </div>
