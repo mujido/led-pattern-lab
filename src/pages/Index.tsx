@@ -56,6 +56,10 @@ const Index = () => {
     addToRecentColors(color);
   }, [addToRecentColors]);
 
+  const handleRecentColorSelect = useCallback((color: string) => {
+    setSelectedColor(color);
+  }, []);
+
   const handleLedClick = useCallback((row: number, col: number) => {
     setLedFrames(prev => {
       const newFrames = [...prev];
@@ -174,6 +178,8 @@ const Index = () => {
               <ColorPicker
                 selectedColor={selectedColor}
                 onColorChange={handleColorChange}
+                recentColors={recentColors}
+                onRecentColorSelect={handleRecentColorSelect}
               />
             </Card>
 
