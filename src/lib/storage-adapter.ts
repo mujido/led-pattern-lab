@@ -3,36 +3,32 @@ import { RestStorage } from './rest-storage';
 
 // Get ESP32 REST API URL from environment variable
 const getESP32RestUrl = () => {
-  console.log('🔍 Debug: Checking REST API URL...');
-  console.log('🔍 Debug: All env vars:', import.meta.env);
-  console.log('🔍 Debug: import.meta.env.VITE_ESP32_REST_URL =', import.meta.env.VITE_ESP32_REST_URL);
-
   if (import.meta.env.VITE_ESP32_REST_URL) {
-    console.log('🔍 Debug: Using environment variable:', import.meta.env.VITE_ESP32_REST_URL);
     return import.meta.env.VITE_ESP32_REST_URL;
   }
 
-  // Fallback to ESP32 IP address
-  console.log('🔍 Debug: Using fallback URL: http://192.168.87.211');
-  return 'http://192.168.87.211';
+  // In production mode (running from ESP32), use the current host
+  if (!import.meta.env.DEV) {
+    return window.location.origin;
+  }
+
+  // No ESP32 URL configured - return null for local storage mode
+  return null;
 };
 
 // Check if we should use REST API (hybrid mode or production)
 const shouldUseRestApi = () => {
   // Check if we're running in Lovable (development mode without ESP32)
   if (import.meta.env.DEV && !import.meta.env.VITE_ESP32_REST_URL) {
-    console.log('🔍 Debug: Running in Lovable - using local storage only');
     return false;
   }
 
   // In development mode with ESP32 URL, try REST API for ESP32 communication (hybrid mode)
   if (import.meta.env.DEV && import.meta.env.VITE_ESP32_REST_URL) {
-    console.log('🔍 Debug: Running in hybrid mode - attempting ESP32 connection');
     return true;
   }
 
-  // In production, always try REST API
-  console.log('🔍 Debug: Running in production - attempting ESP32 connection');
+  // In production, always try REST API (will use current host if no URL configured)
   return true;
 };
 
@@ -54,19 +50,18 @@ class HybridStorageAdapter {
   private async initRestApi() {
     try {
       const restUrl = getESP32RestUrl();
-      console.log('🔍 Debug: Attempting to connect to REST API at:', restUrl);
+      if (!restUrl) {
+        throw new Error('No ESP32 REST URL configured');
+      }
 
-      this.restStorage = new RestStorage({
-        baseUrl: restUrl,
-        timeout: 5000
-      });
-
-      console.log('🔍 Debug: Calling restStorage.connect()...');
+      console.log('Initializing REST API connection to:', restUrl);
+      this.restStorage = new RestStorage({ baseUrl: restUrl });
       await this.restStorage.connect();
-      console.log('✅ REST API connected for hybrid mode');
+      console.log('REST API connection established');
     } catch (error) {
-      console.error('❌ Failed to connect to ESP32 REST API, falling back to local storage:', error);
+      console.error('Failed to initialize REST API:', error);
       this.isRestApiMode = false;
+      this.restStorage = null;
       throw error;
     }
   }
@@ -78,11 +73,11 @@ class HybridStorageAdapter {
         await this.connectionPromise;
       }
 
-      // Create new file on ESP32 via REST API (fails if exists)
+      // Send to ESP32 via REST API
       try {
         await this.restStorage.createFile(file);
       } catch (error) {
-        console.error('❌ Failed to create file via REST API:', error);
+        console.error('Failed to create file via REST API:', error);
         throw new Error('Failed to create file on ESP32: ' + (error instanceof Error ? error.message : String(error)));
       }
     } else {
@@ -116,8 +111,8 @@ class HybridStorageAdapter {
       try {
         await this.restStorage.saveFile(file);
       } catch (error) {
-        console.error('❌ Failed to save via REST API:', error);
-        throw new Error('Failed to save file to ESP32: ' + (error instanceof Error ? error.message : String(error)));
+        console.error('Failed to save file via REST API:', error);
+        throw new Error('Failed to save file on ESP32: ' + (error instanceof Error ? error.message : String(error)));
       }
     } else {
       // Use local storage
@@ -125,7 +120,7 @@ class HybridStorageAdapter {
         this.localStorage.setItem(`${file.name}`, JSON.stringify(file));
       } catch (error) {
         if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-          console.error('❌ localStorage quota exceeded. Please free up some space or use ESP32 mode.');
+          console.error('localStorage quota exceeded. Please free up some space or use ESP32 mode.');
           throw new Error('Storage quota exceeded. Please delete some files or use ESP32 mode for larger storage.');
         }
         throw error;
@@ -145,7 +140,7 @@ class HybridStorageAdapter {
         const file = await this.restStorage.requestFile(name);
         return file;
       } catch (error) {
-        console.error('❌ Failed to request file via REST API:', error);
+        console.error('Failed to request file via REST API:', error);
         throw new Error('Failed to load file from ESP32: ' + (error instanceof Error ? error.message : String(error)));
       }
     } else {
@@ -167,7 +162,7 @@ class HybridStorageAdapter {
         const files = await this.restStorage.requestAllFiles();
         return files;
       } catch (error) {
-        console.error('❌ REST API request failed:', error);
+        console.error('REST API request failed:', error);
         throw new Error('Failed to load files from ESP32: ' + (error instanceof Error ? error.message : String(error)));
       }
     } else {
@@ -297,12 +292,44 @@ class HybridStorageAdapter {
       try {
         return await this.restStorage.getSPIFFSStats();
       } catch (error) {
-        console.error('❌ Failed to get SPIFFS stats:', error);
+        console.error('Failed to get SPIFFS stats:', error);
         return null;
       }
     } else {
       // In local storage mode, return null to indicate no ESP32 stats available
       return null;
+    }
+  }
+
+  // Reset ESP32 metadata system
+  async resetMetadata(): Promise<void> {
+    if (this.isRestApiMode && this.restStorage) {
+      // Wait for connection to be established
+      if (this.connectionPromise) {
+        await this.connectionPromise;
+      }
+
+      try {
+        const restUrl = getESP32RestUrl();
+        const response = await fetch(`${restUrl}/api/reset-metadata`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: AbortSignal.timeout(10000) // 10 second timeout
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        console.log('Metadata system reset successfully');
+      } catch (error) {
+        console.error('Failed to reset metadata system:', error);
+        throw error;
+      }
+    } else {
+      throw new Error('Metadata reset only available in ESP32 mode');
     }
   }
 }

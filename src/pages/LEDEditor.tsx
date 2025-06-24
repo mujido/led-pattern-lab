@@ -77,8 +77,11 @@ const LEDEditor: React.FC = () => {
     const loadFile = async () => {
       if (urlFileName) {
         try {
+          console.log('🔍 Debug: Loading file:', urlFileName);
           const file = await storageAdapter.getFile(urlFileName);
+          console.log('🔍 Debug: Loaded file data:', file);
           if (file) {
+            console.log('🔍 Debug: Setting grid dimensions:', { rows: file.rows, columns: file.columns, totalFrames: file.totalFrames });
             setFileName(file.name);
             setRows(file.rows);
             setColumns(file.columns);
@@ -98,12 +101,16 @@ const LEDEditor: React.FC = () => {
             });
             setLastSavedState(stateString);
             setHasUnsavedChanges(false);
+            console.log('🔍 Debug: File loading complete');
+          } else {
+            console.error('🔍 Debug: File not found:', urlFileName);
           }
         } catch (error) {
           console.error('Failed to load file:', error);
         }
       } else {
         // New file defaults
+        console.log('🔍 Debug: Creating new file with defaults');
         setFileName('Untitled');
         setRows(8);
         setColumns(16);

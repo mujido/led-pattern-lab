@@ -8,15 +8,21 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { FilePreview } from '@/components/FilePreview';
 import { StorageUsageIndicator } from '@/components/StorageUsageIndicator';
 import { fileStorage, type LEDFile } from '@/lib/file-storage';
-import { Plus, FilePen, Trash2, Palette, List } from 'lucide-react';
+import { Plus, FilePen, Trash2, Palette, List, RotateCcw } from 'lucide-react';
 import { storageAdapter } from '@/lib/storage-adapter';
 import { useDataLoader } from '@/hooks/useDataLoader';
+import { toast } from 'sonner';
 
 // Get the base URL for API calls (same as used in storage adapter)
 const getBaseUrl = () => {
   // Use the same logic as storage adapter
   if (import.meta.env.VITE_ESP32_REST_URL) {
     return import.meta.env.VITE_ESP32_REST_URL;
+  }
+
+  // In production mode (running from ESP32), use the current host
+  if (!import.meta.env.DEV) {
+    return window.location.origin;
   }
 
   // Fallback to localStorage
@@ -26,7 +32,6 @@ const getBaseUrl = () => {
   }
 
   // No URL configured - return null for local storage mode
-  console.log('🔍 Debug: No ESP32 URL configured, using local storage mode');
   return null;
 };
 
@@ -93,6 +98,20 @@ export const FileManager: React.FC = () => {
     navigate('/playlists');
   };
 
+  const handleResetMetadata = async () => {
+    try {
+      await storageAdapter.resetMetadata();
+      toast.success('Metadata system reset successfully. Please refresh the page.');
+      // Refresh the data after a short delay
+      setTimeout(() => {
+        refetch();
+      }, 1000);
+    } catch (error) {
+      console.error('Failed to reset metadata:', error);
+      toast.error('Failed to reset metadata system');
+    }
+  };
+
   const selectedFileData = selectedFile ? safeFiles.find(f => f.name === selectedFile) : null;
 
   return (
@@ -127,14 +146,16 @@ export const FileManager: React.FC = () => {
                 <div className="w-2 h-2 bg-red-500 rounded-full mr-3"></div>
                 <p className="text-red-300">{error}</p>
               </div>
-              <Button
-                onClick={refetch}
-                variant="outline"
-                size="sm"
-                className="border-red-700 text-red-300 hover:bg-red-800/20"
-              >
-                Retry
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={refetch}
+                  variant="outline"
+                  size="sm"
+                  className="border-red-700 text-red-300 hover:bg-red-800/20"
+                >
+                  Retry
+                </Button>
+              </div>
             </div>
           </div>
         )}

@@ -36,12 +36,12 @@ export class RestStorage {
 
       if (response.ok) {
         this.isConnected = true;
-        console.log('✅ REST API connected');
+        console.log('REST API connected');
       } else {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
     } catch (error) {
-      console.error('❌ Failed to connect to REST API:', error);
+      console.error('Failed to connect to REST API:', error);
       this.isConnected = false;
       throw error;
     }
@@ -355,13 +355,10 @@ export class RestStorage {
 
       // For listing files, we use JSON format for metadata
       const filesMetadata = await response.json();
-      console.log('🔍 Debug: Raw response from ESP32:', filesMetadata);
-      console.log('🔍 Debug: Response type:', typeof filesMetadata);
-      console.log('🔍 Debug: Is array:', Array.isArray(filesMetadata));
 
       // Handle empty response or non-array response
       if (!Array.isArray(filesMetadata)) {
-        console.warn('⚠️ ESP32 returned non-array response, returning empty array');
+        console.warn('️ESP32 returned non-array response, returning empty array');
         return [];
       }
 
@@ -378,10 +375,9 @@ export class RestStorage {
         hasThumbnail: true
       }));
 
-      console.log('✅ All files retrieved via REST API (GIF format):', files);
       return files;
     } catch (error) {
-      console.error('❌ Failed to get all files via REST API:', error);
+      console.error('Failed to get all files via REST API:', error);
       throw error;
     }
   }
@@ -629,6 +625,14 @@ export class RestStorage {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
+      // Check content type to ensure we're getting JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error('Expected JSON but got:', contentType, 'Response:', text.substring(0, 200));
+        throw new Error(`Expected JSON response but got ${contentType}`);
+      }
+
       const stats = await response.json();
       return {
         totalBytes: stats.totalBytes || 0,
@@ -637,7 +641,7 @@ export class RestStorage {
         usagePercentage: stats.usagePercentage || 0
       };
     } catch (error) {
-      console.error('❌ Failed to get SPIFFS stats via REST API:', error);
+      console.error('Failed to get SPIFFS stats via REST API:', error);
       throw error;
     }
   }

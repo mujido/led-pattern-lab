@@ -39,8 +39,8 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
     nodePolyfills(),
-    mode === 'development' &&
-    componentTagger(),
+    // mode === 'development' &&
+    // componentTagger(),
     // Add bundle analyzer only in development
     mode === 'development' && visualizer({
       filename: 'dist/bundle-analysis.html',
