@@ -1,14 +1,12 @@
 import React, { useState, useCallback, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ColorPicker } from '@/components/ColorPicker';
-import { RecentColors } from '@/components/RecentColors';
 import { LEDGridCanvas } from '@/components/LEDGridCanvas';
 import { GridControls } from '@/components/GridControls';
 import { AnimationControls } from '@/components/AnimationControls';
 import { EditorHeader } from '@/components/EditorHeader';
 import { CollapsibleCard } from '@/components/CollapsibleCard';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -365,23 +363,27 @@ const LEDEditor: React.FC = () => {
 
           {/* LED Grid */}
           <div className="lg:col-span-4">
-            <Card className="p-6 bg-gray-800 border-gray-700">
-              <div className="mb-4 text-center">
-                <span className="text-lg font-semibold">Frame {currentFrame + 1} of {totalFrames}</span>
-                {isDropperActive && (
-                  <div className="mt-2 text-sm text-purple-400 flex items-center justify-center gap-2">
-                    <Pipette className="w-4 h-4" />
-                    Color dropper active - Click any LED to sample its color
-                  </div>
-                )}
-              </div>
-              <LEDGridCanvas
-                rows={rows}
-                columns={columns}
-                colors={ledFrames[currentFrame] || []}
-                onLedClick={handleLedClick}
-                isDropperActive={isDropperActive}
-              />
+            <Card>
+              <CardHeader className="pb-0">
+                <div className="text-center">
+                  <span className="text-lg font-semibold">Frame {currentFrame + 1} of {totalFrames}</span>
+                  {isDropperActive && (
+                    <div className="mt-2 text-sm text-purple-400 flex items-center justify-center gap-2">
+                      <Pipette className="w-4 h-4" />
+                      Color dropper active - Click any LED to sample its color
+                    </div>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <LEDGridCanvas
+                  rows={rows}
+                  columns={columns}
+                  colors={ledFrames[currentFrame] || []}
+                  onLedClick={handleLedClick}
+                  isDropperActive={isDropperActive}
+                />
+              </CardContent>
             </Card>
           </div>
         </div>

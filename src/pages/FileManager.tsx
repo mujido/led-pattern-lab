@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
+import { List, ListItem } from '@/components/ui/list';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { FilePreview } from '@/components/FilePreview';
 import { StorageUsageIndicator } from '@/components/StorageUsageIndicator';
 import { type LEDFile } from '@/lib/file-storage';
-import { Plus, FilePen, Trash2, Palette, List, RotateCcw, Edit, Play, Download, Upload, Settings } from 'lucide-react';
+import { Plus, FilePen, Trash2, Palette, List as ListIcon, RotateCcw, Edit, Play, Download, Upload, Settings } from 'lucide-react';
 import { storageAdapter } from '@/lib/storage-adapter';
 import { useDataLoader } from '@/hooks/useDataLoader';
 import { toast } from 'sonner';
@@ -106,7 +107,7 @@ export const FileManager: React.FC = () => {
               onClick={handleOpenPlaylists}
               className="btn-primary"
             >
-              <List className="w-4 h-4 mr-2" />
+              <ListIcon className="w-4 h-4 mr-2" />
               Manage Playlists
             </Button>
           </div>
@@ -193,15 +194,11 @@ export const FileManager: React.FC = () => {
                   <p>Create your first LED pattern to get started!</p>
                 </div>
               ) : (
-                <div className="space-y-2">
+                <List>
                   {safeFiles.map((file) => (
-                    <div
+                    <ListItem
                       key={file.name}
-                      className={`p-4 rounded-lg border cursor-pointer transition-all ${
-                        selectedFile === file.name
-                          ? 'border-blue-500 bg-blue-900/20'
-                          : 'border-gray-600 bg-gray-700/50 hover:bg-gray-700'
-                      }`}
+                      variant={selectedFile === file.name ? "selected" : "interactive"}
                       onClick={() => setSelectedFile(file.name)}
                     >
                       <div className="flex items-center justify-between">
@@ -223,9 +220,9 @@ export const FileManager: React.FC = () => {
                           className="ml-4"
                         />
                       </div>
-                    </div>
+                    </ListItem>
                   ))}
-                </div>
+                </List>
               )}
             </Card>
           </div>

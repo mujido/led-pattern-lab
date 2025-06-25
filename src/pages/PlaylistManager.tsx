@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { List, ListItem } from '@/components/ui/list';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -179,8 +179,6 @@ export const PlaylistManager: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <Button
               onClick={() => navigate('/files')}
-              variant="outline"
-              className="btn-secondary border-blue-600"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Files
@@ -199,7 +197,7 @@ export const PlaylistManager: React.FC = () => {
               <h2 className="text-xl font-semibold">Your Playlists</h2>
               <AlertDialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                 <AlertDialogTrigger asChild>
-                  <Button className="btn-secondary">
+                  <Button className="">
                     <Plus className="w-4 h-4 mr-2" />
                     New Playlist
                   </Button>
@@ -251,9 +249,9 @@ export const PlaylistManager: React.FC = () => {
                 <p>Create your first playlist to get started!</p>
               </div>
             ) : (
-              <div className="grid gap-4">
+              <List>
                 {playlists.map((playlist) => (
-                  <Card key={playlist.id} className="p-4 bg-gray-700 border-gray-600">
+                  <ListItem key={playlist.id}>
                     <div className="flex items-center justify-between mb-3">
                       {editingId === playlist.id ? (
                         <div className="flex items-center gap-2 flex-1">
@@ -288,8 +286,8 @@ export const PlaylistManager: React.FC = () => {
                         </div>
                       ) : (
                         <>
-                          <div>
-                            <h3 className="text-lg font-semibold">{playlist.name}</h3>
+                          <div className="flex-1">
+                            <h3 className="font-semibold text-lg">{playlist.name}</h3>
                             <p className="text-sm text-gray-400">
                               {playlist.items.length} file{playlist.items.length !== 1 ? 's' : ''}
                             </p>
@@ -384,9 +382,9 @@ export const PlaylistManager: React.FC = () => {
                         )}
                       </div>
                     </div>
-                  </Card>
+                  </ListItem>
                 ))}
-              </div>
+              </List>
             )}
           </Card>
         </div>
