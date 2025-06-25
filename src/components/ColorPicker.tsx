@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,7 +10,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Pipette, Palette } from 'lucide-react';
-import { ColorWheel } from './ColorWheel';
+import { SketchPicker } from 'react-color';
 
 interface ColorPickerProps {
   selectedColor: string;
@@ -22,8 +21,8 @@ interface ColorPickerProps {
   onRecentColorSelect: (color: string) => void;
 }
 
-export const ColorPicker: React.FC<ColorPickerProps> = ({ 
-  selectedColor, 
+export const ColorPicker: React.FC<ColorPickerProps> = ({
+  selectedColor,
   onColorChange,
   isDropperActive = false,
   onDropperToggle,
@@ -70,38 +69,21 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 title="Click to open color picker"
               />
             </DialogTrigger>
-            <DialogContent className="bg-gray-800 border-gray-700 text-white max-w-md">
+            <DialogContent className="bg-gray-800 border-gray-700 text-white max-w-lg p-4">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Palette className="w-5 h-5" />
                   Choose Color
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-6">
-                {/* Color Wheel */}
+              <div className="space-y-4">
                 <div className="flex justify-center">
-                  <ColorWheel
-                    selectedColor={selectedColor}
-                    onColorChange={handleColorInputChange}
-                    size={200}
+                  <SketchPicker
+                    color={selectedColor}
+                    onChange={(color) => handleColorInputChange(color.hex)}
+                    disableAlpha={true}
+                    width="100%"
                   />
-                </div>
-                
-                {/* Preset Colors */}
-                <div className="grid grid-cols-8 gap-2">
-                  {presetColors.map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => handlePresetColorClick(color)}
-                      className={`w-8 h-8 rounded-md border-2 hover:scale-110 transition-all duration-200 ${
-                        selectedColor === color 
-                          ? 'border-purple-400 ring-2 ring-purple-400 ring-opacity-50' 
-                          : 'border-gray-600 hover:border-gray-400'
-                      }`}
-                      style={{ backgroundColor: color }}
-                      title={color}
-                    />
-                  ))}
                 </div>
               </div>
             </DialogContent>
@@ -122,8 +104,8 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
             size="sm"
             onClick={handleDropperClick}
             className={`${
-              isDropperActive 
-                ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+              isDropperActive
+                ? 'bg-purple-600 hover:bg-purple-700 text-white'
                 : 'border-gray-600 text-gray-300 hover:bg-gray-700'
             }`}
             title="Color Dropper - Click to sample colors from the grid"
@@ -137,7 +119,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
           </p>
         )}
       </div>
-      
+
       {/* Recent Colors Section */}
       <div className="space-y-3">
         <Label className="text-sm font-medium text-gray-300">Recent Colors</Label>
@@ -147,8 +129,8 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
               key={`${color}-${index}`}
               onClick={() => onRecentColorSelect(color)}
               className={`w-10 h-10 rounded-lg border-2 hover:scale-105 transition-all duration-200 ${
-                selectedColor === color 
-                  ? 'border-purple-400 ring-2 ring-purple-400 ring-opacity-50' 
+                selectedColor === color
+                  ? 'border-purple-400 ring-2 ring-purple-400 ring-opacity-50'
                   : 'border-gray-600 hover:border-gray-400'
               }`}
               style={{ backgroundColor: color }}
