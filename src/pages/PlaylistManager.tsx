@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { List, ListItem } from '@/components/ui/list';
+import { PageLayout } from '@/components/ui/page-layout';
+import { PageHeader } from '@/components/ui/page-header';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -173,222 +175,212 @@ export const PlaylistManager: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4">
-      <div className="max-w-6xl mx-auto">
-        <header className="text-center mb-8">
+    <PageLayout>
+      <PageHeader
+        title="Playlist Manager"
+        description="Create and manage playlists for your LED animations"
+        backButton={{
+          onClick: () => navigate('/files')
+        }}
+      />
+
+      <div className="grid gap-6">
+        <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <Button
-              onClick={() => navigate('/files')}
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Files
-            </Button>
-            <div></div>
+            <h2 className="text-xl font-semibold">Your Playlists</h2>
+            <AlertDialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+              <AlertDialogTrigger asChild>
+                <Button className="">
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Playlist
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Create New Playlist</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Enter a name for your new playlist.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="py-4">
+                  <Label htmlFor="playlist-name" className="text-sm text-gray-300">
+                    Playlist Name
+                  </Label>
+                  <Input
+                    id="playlist-name"
+                    value={newPlaylistName}
+                    onChange={(e) => setNewPlaylistName(e.target.value)}
+                    placeholder="Enter playlist name..."
+                    className="mt-2 bg-gray-700 border-gray-600 text-white"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && newPlaylistName.trim()) {
+                        handleCreatePlaylist();
+                      }
+                    }}
+                  />
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>
+                    Cancel
+                  </AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleCreatePlaylist}
+                    disabled={!newPlaylistName.trim()}
+                    className="btn-secondary"
+                  >
+                    Create
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-            Playlist Manager
-          </h1>
-          <p className="text-gray-400">Create and manage playlists for your LED animations</p>
-        </header>
 
-        <div className="grid gap-6">
-          <Card className="p-6 bg-gray-800 border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold">Your Playlists</h2>
-              <AlertDialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-                <AlertDialogTrigger asChild>
-                  <Button className="">
-                    <Plus className="w-4 h-4 mr-2" />
-                    New Playlist
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent className="bg-gray-800 border-gray-700 text-white">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Create New Playlist</AlertDialogTitle>
-                    <AlertDialogDescription className="text-gray-300">
-                      Enter a name for your new playlist.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <div className="py-4">
-                    <Label htmlFor="playlist-name" className="text-sm text-gray-300">
-                      Playlist Name
-                    </Label>
-                    <Input
-                      id="playlist-name"
-                      value={newPlaylistName}
-                      onChange={(e) => setNewPlaylistName(e.target.value)}
-                      placeholder="Enter playlist name..."
-                      className="mt-2 bg-gray-700 border-gray-600 text-white"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && newPlaylistName.trim()) {
-                          handleCreatePlaylist();
-                        }
-                      }}
-                    />
-                  </div>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600">
-                      Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={handleCreatePlaylist}
-                      disabled={!newPlaylistName.trim()}
-                      className="btn-secondary"
-                    >
-                      Create
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+          {playlists.length === 0 ? (
+            <div className="text-center py-12 text-gray-400">
+              <Play className="w-16 h-16 mx-auto mb-4 opacity-50" />
+              <p className="text-lg mb-2">No playlists yet</p>
+              <p>Create your first playlist to get started!</p>
             </div>
-
-            {playlists.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
-                <Play className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                <p className="text-lg mb-2">No playlists yet</p>
-                <p>Create your first playlist to get started!</p>
-              </div>
-            ) : (
-              <List>
-                {playlists.map((playlist) => (
-                  <ListItem key={playlist.id}>
-                    <div className="flex items-center justify-between mb-3">
-                      {editingId === playlist.id ? (
-                        <div className="flex items-center gap-2 flex-1">
-                          <Input
-                            value={editingName}
-                            onChange={(e) => setEditingName(e.target.value)}
-                            className="bg-gray-600 border-gray-500 text-white"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                handleRenamePlaylist(playlist.id);
-                              } else if (e.key === 'Escape') {
-                                cancelEditing();
-                              }
-                            }}
-                            autoFocus
-                          />
+          ) : (
+            <List>
+              {playlists.map((playlist) => (
+                <ListItem key={playlist.id}>
+                  <div className="flex items-center justify-between mb-3">
+                    {editingId === playlist.id ? (
+                      <div className="flex items-center gap-2 flex-1">
+                        <Input
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          className="bg-gray-600 border-gray-500 text-white"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              handleRenamePlaylist(playlist.id);
+                            } else if (e.key === 'Escape') {
+                              cancelEditing();
+                            }
+                          }}
+                          autoFocus
+                        />
+                        <Button
+                          onClick={() => handleRenamePlaylist(playlist.id)}
+                          size="sm"
+                          className="btn-primary"
+                        >
+                          <Save className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          onClick={cancelEditing}
+                          size="sm"
+                          variant="outline"
+                          className="border-gray-500"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg">{playlist.name}</h3>
+                          <p className="text-sm text-gray-400">
+                            {playlist.items.length} file{playlist.items.length !== 1 ? 's' : ''}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
                           <Button
-                            onClick={() => handleRenamePlaylist(playlist.id)}
-                            size="sm"
-                            className="btn-primary"
-                          >
-                            <Save className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            onClick={cancelEditing}
+                            onClick={() => startEditing(playlist)}
                             size="sm"
                             variant="outline"
                             className="border-gray-500"
                           >
-                            <X className="w-4 h-4" />
+                            <Edit className="w-4 h-4" />
                           </Button>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-lg">{playlist.name}</h3>
-                            <p className="text-sm text-gray-400">
-                              {playlist.items.length} file{playlist.items.length !== 1 ? 's' : ''}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={() => startEditing(playlist)}
-                              size="sm"
-                              variant="outline"
-                              className="border-gray-500"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="btn-danger border-red-800"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent className="bg-gray-800 border-gray-700 text-white">
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Delete Playlist</AlertDialogTitle>
-                                  <AlertDialogDescription className="text-gray-300">
-                                    Are you sure you want to delete "{playlist.name}"? This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600">
-                                    Cancel
-                                  </AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDeletePlaylist(playlist.id)}
-                                    className="btn-danger"
-                                  >
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          </div>
-                        </>
-                      )}
-                    </div>
-
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium text-gray-300">Files in this playlist:</h4>
-                      {playlist.items.length === 0 ? (
-                        <p className="text-sm text-gray-500">No files added yet</p>
-                      ) : (
-                        <div className="flex flex-wrap gap-2">
-                          {playlist.items.map((item) => (
-                            <div
-                              key={item.id}
-                              className="flex items-center gap-2 bg-gray-600 px-3 py-1 rounded-full text-sm"
-                            >
-                              <span>{item.fileName}</span>
-                              <button
-                                onClick={() => handleRemoveFileFromPlaylist(playlist.id, item.fileId)}
-                                className="text-red-400 hover:text-red-300"
-                              >
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="pt-2">
-                        <h5 className="text-sm font-medium text-gray-300 mb-2">Add files:</h5>
-                        <div className="flex flex-wrap gap-2">
-                          {files
-                            .filter((file) => !playlist.items.some(item => item.fileId === file.name))
-                            .map((file) => (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
                               <Button
-                                key={file.name}
-                                onClick={() => handleAddFileToPlaylist(playlist.id, file.name)}
                                 size="sm"
                                 variant="outline"
-                                className="text-xs border-gray-500 hover:bg-gray-600"
+                                className="btn-danger border-red-800"
                               >
-                                <Plus className="w-3 h-3 mr-1" />
-                                {file.name}
+                                <Trash2 className="w-4 h-4" />
                               </Button>
-                            ))}
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Playlist</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to delete "{playlist.name}"? This action cannot be undone.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>
+                                  Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeletePlaylist(playlist.id)}
+                                  className="btn-danger"
+                                >
+                                  Delete
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
-                        {files.filter((file) => !playlist.items.some(item => item.fileId === file.name)).length === 0 && (
-                          <p className="text-xs text-gray-500">All files are already in this playlist</p>
-                        )}
+                      </>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-gray-300">Files in this playlist:</h4>
+                    {playlist.items.length === 0 ? (
+                      <p className="text-sm text-gray-500">No files added yet</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {playlist.items.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-2 bg-gray-600 px-3 py-1 rounded-full text-sm"
+                          >
+                            <span>{item.fileName}</span>
+                            <button
+                              onClick={() => handleRemoveFileFromPlaylist(playlist.id, item.fileId)}
+                              className="text-red-400 hover:text-red-300"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
                       </div>
+                    )}
+
+                    <div className="pt-2">
+                      <h5 className="text-sm font-medium text-gray-300 mb-2">Add files:</h5>
+                      <div className="flex flex-wrap gap-2">
+                        {files
+                          .filter((file) => !playlist.items.some(item => item.fileId === file.name))
+                          .map((file) => (
+                            <Button
+                              key={file.name}
+                              onClick={() => handleAddFileToPlaylist(playlist.id, file.name)}
+                              size="sm"
+                              variant="outline"
+                              className="text-xs border-gray-500 hover:bg-gray-600"
+                            >
+                              <Plus className="w-3 h-3 mr-1" />
+                              {file.name}
+                            </Button>
+                          ))}
+                      </div>
+                      {files.filter((file) => !playlist.items.some(item => item.fileId === file.name)).length === 0 && (
+                        <p className="text-xs text-gray-500">All files are already in this playlist</p>
+                      )}
                     </div>
-                  </ListItem>
-                ))}
-              </List>
-            )}
-          </Card>
-        </div>
+                  </div>
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </Card>
       </div>
-    </div>
+    </PageLayout>
   );
 };

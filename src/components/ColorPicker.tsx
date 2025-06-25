@@ -69,7 +69,7 @@ export const ColorPicker: React.FC<ColorPickerProps> = ({
                 title="Click to open color picker"
               />
             </DialogTrigger>
-            <DialogContent className="bg-gray-800 border-gray-700 text-white max-w-lg p-4">
+            <DialogContent className="max-w-lg p-4">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Palette className="w-5 h-5" />

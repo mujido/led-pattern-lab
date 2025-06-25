@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { ChevronDown, ChevronUp } from 'lucide-react';
@@ -21,7 +20,7 @@ export const CollapsibleCard: React.FC<CollapsibleCardProps> = ({
   const Icon = isExpanded ? ChevronUp : ChevronDown;
 
   return (
-    <Card className="bg-gray-800 border-gray-700">
+    <Card>
       <button
         onClick={() => onToggle(panelKey)}
         className="w-full p-4 flex items-center justify-between text-left hover:bg-gray-700/50 transition-colors"

@@ -125,16 +125,16 @@ export const GridControls: React.FC<GridControlsProps> = ({
             Clear Grid
           </Button>
         </AlertDialogTrigger>
-        <AlertDialogContent className="bg-gray-800 border-gray-700">
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Clear Grid</AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-300">
+            <AlertDialogTitle>Clear Grid</AlertDialogTitle>
+            <AlertDialogDescription>
               Are you sure you want to clear the current frame? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={onClearGrid} className="bg-red-600 hover:bg-red-700">Clear</AlertDialogAction>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={onClearGrid}>Clear</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

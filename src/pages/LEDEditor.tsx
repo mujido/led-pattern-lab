@@ -391,34 +391,17 @@ const LEDEditor: React.FC = () => {
 
       {/* Exit Confirmation Dialog */}
       <AlertDialog open={showExitDialog} onOpenChange={setShowExitDialog}>
-        <AlertDialogContent className="bg-gray-800 border-gray-700 text-white">
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-yellow-500" />
-              Unsaved Changes
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-gray-300">
-              You have unsaved changes that will be lost if you leave without saving. What would you like to do?
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. Are you sure you want to leave? Your changes will be lost.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel
-              onClick={() => setShowExitDialog(false)}
-              className="bg-gray-700 border-gray-600 text-white hover:bg-gray-600"
-            >
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDiscardAndExit}
-              className="bg-red-600 hover:bg-red-700 text-white"
-            >
-              Discard Changes
-            </AlertDialogAction>
-            <AlertDialogAction
-              onClick={handleSaveAndExit}
-              className="bg-green-600 hover:bg-green-700 text-white"
-            >
-              Save & Exit
+            <AlertDialogCancel>Stay</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDiscardAndExit}>
+              Leave Anyway
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
