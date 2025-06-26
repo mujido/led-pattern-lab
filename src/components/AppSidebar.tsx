@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Files, List, Plus, FileIcon, PlayIcon, X } from 'lucide-react';
@@ -55,7 +54,7 @@ export function AppSidebar() {
     try {
       const newFile = {
         name: newFileName.trim(),
-        frames: [[[Array(16).fill('#000000')]]],
+        frames: [Array(16).fill(null).map(() => Array(16).fill('#000000'))],
         rows: 16,
         columns: 16,
         totalFrames: 1,
