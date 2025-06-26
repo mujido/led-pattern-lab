@@ -5,8 +5,6 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from './components/AppSidebar';
-import { FileManager } from './pages/FileManager';
-import { PlaylistManager } from './pages/PlaylistManager';
 import LEDEditor from "./pages/LEDEditor";
 
 const App = () => {
@@ -26,10 +24,8 @@ const App = () => {
               
               <main className="flex-1 overflow-auto">
                 <Routes>
-                  <Route path="/" element={<Navigate to="/files" replace />} />
-                  <Route path="/files" element={<FileManager />} />
+                  <Route path="/" element={<Navigate to="/editor" replace />} />
                   <Route path="/editor/:fileName?" element={<LEDEditor />} />
-                  <Route path="/playlists" element={<PlaylistManager />} />
                 </Routes>
               </main>
             </div>
