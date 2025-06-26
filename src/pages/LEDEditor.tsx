@@ -23,6 +23,7 @@ import { LEDFile } from '@/lib/file-storage';
 import { toast } from 'sonner';
 import { useAnimationState } from '@/hooks/useAnimationState';
 import { storageAdapter } from '@/lib/storage-adapter';
+import { PageLayout } from '@/components/ui/page-layout';
 
 // Lazy load the ImportExportPanel to reduce initial bundle size
 const ImportExportPanel = lazy(() => import('@/components/ImportExportPanel').then(module => ({ default: module.ImportExportPanel })));
@@ -280,112 +281,110 @@ const LEDEditor: React.FC = () => {
   }, [handleFrameCountChange, rows, columns]);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white p-4">
-      <div className="mx-auto">
-        <EditorHeader
-          fileName={fileName}
-          hasUnsavedChanges={hasUnsavedChanges}
-          onBackToFiles={handleBackToFilesClick}
-          onSave={handleSaveFile}
-        />
+    <PageLayout>
+      <EditorHeader
+        fileName={fileName}
+        hasUnsavedChanges={hasUnsavedChanges}
+        onBackToFiles={handleBackToFilesClick}
+        onSave={handleSaveFile}
+      />
 
-        <div className="grid lg:grid-cols-5 gap-6">
-          <div className="lg:col-span-1 space-y-6">
-            <CollapsibleCard
-              title="Grid Settings"
-              panelKey="grid"
-              isExpanded={expandedPanel === 'grid'}
-              onToggle={togglePanel}
-            >
-              <GridControls
+      <div className="grid lg:grid-cols-5 gap-6">
+        <div className="lg:col-span-1 space-y-6">
+          <CollapsibleCard
+            title="Grid Settings"
+            panelKey="grid"
+            isExpanded={expandedPanel === 'grid'}
+            onToggle={togglePanel}
+          >
+            <GridControls
+              rows={rows}
+              columns={columns}
+              onGridSizeChange={handleGridSizeChange}
+              onClearGrid={clearGrid}
+            />
+          </CollapsibleCard>
+
+          <CollapsibleCard
+            title="Colors"
+            panelKey="colors"
+            isExpanded={expandedPanel === 'colors'}
+            onToggle={togglePanel}
+          >
+            <ColorPicker
+              selectedColor={selectedColor}
+              onColorChange={handleColorChange}
+              isDropperActive={isDropperActive}
+              onDropperToggle={setIsDropperActive}
+              recentColors={recentColors}
+              onRecentColorSelect={handleRecentColorSelect}
+            />
+          </CollapsibleCard>
+
+          <CollapsibleCard
+            title="Animation"
+            panelKey="animation"
+            isExpanded={expandedPanel === 'animation'}
+            onToggle={togglePanel}
+          >
+            <AnimationControls
+              totalFrames={totalFrames}
+              currentFrame={currentFrame}
+              isPlaying={isPlaying}
+              playbackSpeed={playbackSpeed}
+              startFrame={startFrame}
+              endFrame={endFrame}
+              onFrameCountChange={wrappedHandleFrameCountChange}
+              onCurrentFrameChange={setCurrentFrame}
+              onPlayToggle={handlePlayToggle}
+              onPlaybackSpeedChange={setPlaybackSpeed}
+              onStartFrameChange={setStartFrame}
+              onEndFrameChange={setEndFrame}
+            />
+          </CollapsibleCard>
+
+          <CollapsibleCard
+            title="Import/Export"
+            panelKey="importexport"
+            isExpanded={expandedPanel === 'importexport'}
+            onToggle={togglePanel}
+          >
+            <Suspense fallback={<div>Loading...</div>}>
+              <ImportExportPanel
+                fileName={fileName}
                 rows={rows}
                 columns={columns}
-                onGridSizeChange={handleGridSizeChange}
-                onClearGrid={clearGrid}
+                ledFrames={ledFrames}
+                onImport={handleImport}
               />
-            </CollapsibleCard>
+            </Suspense>
+          </CollapsibleCard>
+        </div>
 
-            <CollapsibleCard
-              title="Colors"
-              panelKey="colors"
-              isExpanded={expandedPanel === 'colors'}
-              onToggle={togglePanel}
-            >
-              <ColorPicker
-                selectedColor={selectedColor}
-                onColorChange={handleColorChange}
+        {/* LED Grid */}
+        <div className="lg:col-span-4">
+          <Card>
+            <CardHeader className="pb-0">
+              <div className="text-center">
+                <span className="text-lg font-semibold">Frame {currentFrame + 1} of {totalFrames}</span>
+                {isDropperActive && (
+                  <div className="mt-2 text-sm text-purple-400 flex items-center justify-center gap-2">
+                    <Pipette className="w-4 h-4" />
+                    Color dropper active - Click any LED to sample its color
+                  </div>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <LEDGridCanvas
+                rows={rows}
+                columns={columns}
+                colors={ledFrames[currentFrame] || []}
+                onLedClick={handleLedClick}
                 isDropperActive={isDropperActive}
-                onDropperToggle={setIsDropperActive}
-                recentColors={recentColors}
-                onRecentColorSelect={handleRecentColorSelect}
               />
-            </CollapsibleCard>
-
-            <CollapsibleCard
-              title="Animation"
-              panelKey="animation"
-              isExpanded={expandedPanel === 'animation'}
-              onToggle={togglePanel}
-            >
-              <AnimationControls
-                totalFrames={totalFrames}
-                currentFrame={currentFrame}
-                isPlaying={isPlaying}
-                playbackSpeed={playbackSpeed}
-                startFrame={startFrame}
-                endFrame={endFrame}
-                onFrameCountChange={wrappedHandleFrameCountChange}
-                onCurrentFrameChange={setCurrentFrame}
-                onPlayToggle={handlePlayToggle}
-                onPlaybackSpeedChange={setPlaybackSpeed}
-                onStartFrameChange={setStartFrame}
-                onEndFrameChange={setEndFrame}
-              />
-            </CollapsibleCard>
-
-            <CollapsibleCard
-              title="Import/Export"
-              panelKey="importexport"
-              isExpanded={expandedPanel === 'importexport'}
-              onToggle={togglePanel}
-            >
-              <Suspense fallback={<div>Loading...</div>}>
-                <ImportExportPanel
-                  fileName={fileName}
-                  rows={rows}
-                  columns={columns}
-                  ledFrames={ledFrames}
-                  onImport={handleImport}
-                />
-              </Suspense>
-            </CollapsibleCard>
-          </div>
-
-          {/* LED Grid */}
-          <div className="lg:col-span-4">
-            <Card>
-              <CardHeader className="pb-0">
-                <div className="text-center">
-                  <span className="text-lg font-semibold">Frame {currentFrame + 1} of {totalFrames}</span>
-                  {isDropperActive && (
-                    <div className="mt-2 text-sm text-purple-400 flex items-center justify-center gap-2">
-                      <Pipette className="w-4 h-4" />
-                      Color dropper active - Click any LED to sample its color
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <LEDGridCanvas
-                  rows={rows}
-                  columns={columns}
-                  colors={ledFrames[currentFrame] || []}
-                  onLedClick={handleLedClick}
-                  isDropperActive={isDropperActive}
-                />
-              </CardContent>
-            </Card>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
@@ -406,7 +405,7 @@ const LEDEditor: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </PageLayout>
   );
 };
 

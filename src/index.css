@@ -2,48 +2,84 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. */
+/* Design system variables - only colors actually used */
 
 @layer base {
   :root {
-    --background: hsl(0 0% 100%);
-    --foreground: hsl(222.2 84% 4.9%);
+    /* Base colors - define once, use everywhere */
 
-    --card: hsl(0 0% 100%);
-    --card-foreground: light-gray;
+    /* Neutrals - heavily used throughout the app */
+    --color-white: #f8fafc;
+    --color-black: #000000;
+    --color-gray-300: #d1d5db;
+    --color-gray-400: #9ca3af;
+    --color-gray-500: #6b7280;
+    --color-gray-600: #4b5563;
+    --color-gray-700: #374151;
+    --color-gray-800: #1f2937;
 
-    --popover: hsl(0 0% 100%);
-    --popover-foreground: hsl(222.2 84% 4.9%);
+    /* Reds - used for errors and destructive actions */
+    --color-red-300: #fca5a5;
+    --color-red-400: #f87171;
+    --color-red-500: #ef4444;
+    --color-red-700: #991b1b;
+    --color-red-800: #7f1d1d;
+    --color-red-900: #450a0a;
 
-    --primary: hsl(222.2 47.4% 11.2%);
-    --primary-foreground: hsl(210 40% 98%);
+    /* Yellows - used for warnings and unsaved indicators */
+    --color-yellow-300: #fde047;
+    --color-yellow-500: #f59e0b;
 
-    --secondary: hsl(210 40% 96.1%);
-    --secondary-foreground: hsl(222.2 47.4% 11.2%);
+    /* Greens - used for success states */
+    --color-green-500: #10b981;
 
-    --muted: hsl(210 40% 96.1%);
-    --muted-foreground: hsl(215.4 16.3% 46.9%);
+    /* Blues - used for focus states and gradients */
+    --color-blue-400: #60a5fa;
+    --color-blue-500: #3b82f6;
+    --color-blue-600: #2563eb;
 
-    --accent: hsl(210 40% 96.1%);
-    --accent-foreground: hsl(222.2 47.4% 11.2%);
+    /* Purples - used for primary actions and accents */
+    --color-purple-400: #a78bfa;
+    --color-purple-500: #9069C3;
+    --color-purple-600: #9333ea;
+    --color-purple-700: #7c3aed;
 
-    --destructive: hsl(0 84.2% 60.2%);
-    --destructive-foreground: hsl(210 40% 98%);
+    /* Special purpose */
+    --color-grid-border: #404040;
 
-    --border: hsl(214.3 31.8% 91.4%);
-    --input: hsl(214.3 31.8% 91.4%);
-    --ring: hsl(222.2 84% 4.9%);
+    /* Semantic colors - derived from base colors */
+    --background: var(--color-black);
+    --foreground: var(--color-white);
+
+    --card: var(--color-gray-800);
+    --card-foreground: var(--color-white);
+
+    --popover: var(--color-gray-800);
+    --popover-foreground: var(--color-white);
+
+    --primary: var(--color-purple-600);
+    --primary-foreground: var(--color-white);
+    --primary-hover: var(--color-purple-500);
+
+    --secondary: var(--color-gray-600);
+    --secondary-foreground: var(--color-white);
+    --secondary-hover: var(--color-gray-500);
+
+    --muted: var(--color-gray-700);
+    --muted-foreground: var(--color-gray-400);
+
+    --accent: var(--color-gray-700);
+    --accent-foreground: var(--color-white);
+
+    --destructive: var(--color-red-700);
+    --destructive-foreground: var(--color-white);
+    --destructive-hover: var(--color-red-800);
+
+    --border: var(--color-gray-700);
+    --input: var(--color-gray-700);
+    --ring: var(--color-gray-300);
 
     --radius: 0.5rem;
-
-    --sidebar-background: hsl(0 0% 98%);
-    --sidebar-foreground: hsl(240 5.3% 26.1%);
-    --sidebar-primary: hsl(240 5.9% 10%);
-    --sidebar-primary-foreground: hsl(0 0% 98%);
-    --sidebar-accent: hsl(240 4.8% 95.9%);
-    --sidebar-accent-foreground: hsl(240 5.9% 10%);
-    --sidebar-border: hsl(220 13% 91%);
-    --sidebar-ring: hsl(217.2 91.2% 59.8%);
   }
 }
 

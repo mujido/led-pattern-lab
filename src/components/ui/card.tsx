@@ -4,15 +4,16 @@ import { cn } from "@/lib/utils"
 export interface CardProps
   extends React.HTMLAttributes<HTMLDivElement> {}
 
-const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, ...props }, ref) => (
-    <div
-      ref={ref}
-      className={cn("rounded-lg border shadow-sm bg-gray-800 text-white border-gray-700", className)}
-      {...props}
-    />
-  )
-)
+const Card = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn("rounded-lg border shadow-sm bg-card text-card-foreground", className)}
+    {...props}
+  />
+))
 Card.displayName = "Card"
 
 const CardHeader = React.forwardRef<
@@ -33,10 +34,7 @@ const CardTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn(
-      "text-2xl font-semibold leading-none tracking-tight",
-      className
-    )}
+    className={cn("text-2xl font-semibold leading-none tracking-tight", className)}
     {...props}
   />
 ))

@@ -75,20 +75,20 @@ export const StorageUsageIndicator: React.FC<StorageUsageIndicatorProps> = ({
   return (
     <Card className={`p-4 ${className}`}>
       <div className="flex items-center space-x-3">
-        <HardDrive className="w-5 h-5 text-gray-400" />
+        <HardDrive className="w-5 h-5 text-muted-foreground" />
         <div className="flex-1">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-gray-300">
+            <span className="text-sm font-medium text-foreground">
               Storage Usage
               <span className="text-xs ml-2 text-purple-400">({esp32Stats ? "ESP32" : "Local"})</span>
             </span>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-muted-foreground">
               {loading ? 'Loading...' : `${formatBytes(usedBytes)} / ${formatBytes(totalBytes)}`}
             </span>
           </div>
 
           {/* Progress bar */}
-          <div className="w-full bg-gray-700 rounded-full h-2">
+          <div className="w-full bg-muted rounded-full h-2">
             <div
               className={`h-2 rounded-full transition-all duration-300 ${getUsageColor(usagePercentage)}`}
               style={{ width: `${usagePercentage}%` }}
@@ -96,10 +96,10 @@ export const StorageUsageIndicator: React.FC<StorageUsageIndicatorProps> = ({
           </div>
 
           <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-muted-foreground">
               {files.length} file{files.length !== 1 ? 's' : ''}
             </span>
-            <span className="text-xs text-gray-500">
+            <span className="text-xs text-muted-foreground">
               {usagePercentage.toFixed(1)}% used
             </span>
           </div>

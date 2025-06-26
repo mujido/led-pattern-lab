@@ -162,13 +162,13 @@ export const FileManager: React.FC = () => {
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <div className="my-4">
-                    <Label htmlFor="filename" className="text-gray-300">File Name</Label>
+                    <Label htmlFor="filename">File Name</Label>
                     <Input
                       id="filename"
                       value={newFileName}
                       onChange={(e) => setNewFileName(e.target.value)}
                       placeholder="My Pattern"
-                      className="bg-gray-700 border-gray-600 text-white mt-1"
+                      className="mt-1"
                       onKeyDown={(e) => e.key === 'Enter' && handleCreateNew()}
                     />
                   </div>
@@ -185,11 +185,11 @@ export const FileManager: React.FC = () => {
             </div>
 
             {loading ? (
-              <div className="text-center py-12 text-gray-400">
+              <div className="text-center py-12 text-muted-foreground">
                 <p>Loading files...</p>
               </div>
             ) : safeFiles.length === 0 ? (
-              <div className="text-center py-12 text-gray-400">
+              <div className="text-center py-12 text-muted-foreground">
                 <Palette className="w-16 h-16 mx-auto mb-4 opacity-50" />
                 <p className="text-lg mb-2">No files yet</p>
                 <p>Create your first LED pattern to get started!</p>
@@ -205,10 +205,10 @@ export const FileManager: React.FC = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg">{file.name}</h3>
-                        <p className="text-sm text-gray-400">
+                        <p className="text-sm text-muted-foreground">
                           {file.rows}×{file.columns} • {file.totalFrames} frame{file.totalFrames !== 1 ? 's' : ''}
                         </p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-xs text-muted-foreground/70">
                           Updated {new Date(file.updatedAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -245,7 +245,7 @@ export const FileManager: React.FC = () => {
                     baseUrl={baseUrl}
                     className="mx-auto mb-4"
                   />
-                  <p className="text-sm text-gray-400 mb-4">
+                  <p className="text-sm text-muted-foreground">
                     {selectedFileData.rows}×{selectedFileData.columns} • {selectedFileData.totalFrames} frame{selectedFileData.totalFrames !== 1 ? 's' : ''}
                   </p>
                 </div>
@@ -290,7 +290,7 @@ export const FileManager: React.FC = () => {
                 </AlertDialog>
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-400">
+              <div className="text-center py-8 text-muted-foreground">
                 <p>Select a file to see actions</p>
               </div>
             )}

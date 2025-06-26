@@ -1,32 +1,50 @@
 import * as React from "react"
+import { cva, type VariantProps } from "class-variance-authority"
 import { cn } from "@/lib/utils"
 
-export interface ListProps
-  extends React.HTMLAttributes<HTMLUListElement> {}
+const listVariants = cva("space-y-2", {
+  variants: {
+    variant: {
+      default: "",
+      sublevel: "ml-4 space-y-1",
+    },
+  },
+  defaultVariants: {
+    variant: "default",
+  },
+})
 
-export interface ListItemProps
-  extends React.HTMLAttributes<HTMLLIElement> {}
-
-const List = React.forwardRef<HTMLUListElement, ListProps>(
-  ({ className, ...props }, ref) => (
-    <ul
-      ref={ref}
-      className={cn("space-y-2", className)}
-      {...props}
-    />
-  )
+const listItemVariants = cva(
+  "p-4 rounded-lg border transition-all",
+  {
+    variants: {
+      variant: {
+        default: "border-border bg-muted hover:bg-accent",
+        sublevel: "border-border/50 bg-background/50 hover:bg-muted/30",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+    },
+  }
 )
-List.displayName = "List"
 
-const ListItem = React.forwardRef<HTMLLIElement, ListItemProps>(
-  ({ className, ...props }, ref) => (
-    <li
-      ref={ref}
-      className={cn("p-4 rounded-lg border border-gray-600 bg-gray-700/50 hover:bg-gray-700 transition-all", className)}
-      {...props}
-    />
+interface ListProps
+  extends React.HTMLAttributes<HTMLUListElement>,
+    VariantProps<typeof listVariants> {}
+
+interface ListItemProps
+  extends React.HTMLAttributes<HTMLLIElement>,
+    VariantProps<typeof listItemVariants> {}
+
+export function List({ className, variant, ...props }: ListProps) {
+  return (
+    <ul className={cn(listVariants({ variant }), className)} {...props} />
   )
-)
-ListItem.displayName = "ListItem"
+}
 
-export { List, ListItem }
+export function ListItem({ className, variant, ...props }: ListItemProps) {
+  return (
+    <li className={cn(listItemVariants({ variant }), className)} {...props} />
+  )
+}
