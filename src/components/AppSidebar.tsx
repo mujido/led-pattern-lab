@@ -44,8 +44,15 @@ export function AppSidebar() {
   const isFileActive = (fileName: string) =>
     location.pathname === `/editor/${encodeURIComponent(fileName)}`;
 
+  const isPlaylistActive = (playlistId: string) =>
+    location.pathname === `/playlist/${playlistId}`;
+
   const handleFileClick = (fileName: string) => {
     navigate(`/editor/${encodeURIComponent(fileName)}`);
+  };
+
+  const handlePlaylistClick = (playlistId: string) => {
+    navigate(`/playlist/${playlistId}`);
   };
 
   const handleCreateFile = async () => {
@@ -225,7 +232,11 @@ export function AppSidebar() {
               </SidebarMenuItem>
               {playlists.map((playlist) => (
                 <SidebarMenuItem key={playlist.id}>
-                  <SidebarMenuButton className="group justify-between">
+                  <SidebarMenuButton 
+                    onClick={() => handlePlaylistClick(playlist.id)} 
+                    isActive={isPlaylistActive(playlist.id)}
+                    className="group justify-between"
+                  >
                     <div className="flex items-center">
                       <PlayIcon className="w-4 h-4" />
                       {state === 'open' && <span className="ml-2">{playlist.name}</span>}

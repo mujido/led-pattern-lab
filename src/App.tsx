@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from './components/AppSidebar';
 import LEDEditor from "./pages/LEDEditor";
+import PlaylistEditor from "./pages/PlaylistEditor";
 
 const App = () => {
   return (
@@ -26,6 +27,7 @@ const App = () => {
                 <Routes>
                   <Route path="/" element={<Navigate to="/editor" replace />} />
                   <Route path="/editor/:fileName?" element={<LEDEditor />} />
+                  <Route path="/playlist/:playlistId" element={<PlaylistEditor />} />
                 </Routes>
               </main>
             </div>
