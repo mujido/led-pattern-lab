@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Files, List, Plus, FileIcon, PlayIcon } from 'lucide-react';
@@ -22,19 +21,23 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const { state } = useSidebar();
-  
-  const { data: files = [] } = useDataLoader(
+
+  const { data: filesData } = useDataLoader(
     () => storageAdapter.getAllFiles(),
     []
   );
-  
-  const { data: playlists = [] } = useDataLoader(
+
+  const { data: playlistsData } = useDataLoader(
     () => playlistStorageAdapter.getAllPlaylists(),
     []
   );
 
+  // Ensure we have arrays, not null
+  const files = filesData || [];
+  const playlists = playlistsData || [];
+
   const isActive = (path: string) => location.pathname === path;
-  const isFileActive = (fileName: string) => 
+  const isFileActive = (fileName: string) =>
     location.pathname === `/editor/${encodeURIComponent(fileName)}`;
 
   const handleFileClick = (fileName: string) => {
